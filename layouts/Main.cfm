@@ -20,6 +20,51 @@
 
 	<!--- Title --->
 	<title>Grapery Timesheet Manager</title>
+
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+
+	<script src="https://unpkg.com/jquery@3.4.0/dist/jquery.js"></script>
+
+    <link
+      href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.structure.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.theme.css"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.js"></script>
+
+    <link
+      href="https://unpkg.com/pqgridf@3.5.0/pqgrid.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/pqgridf@3.5.0/pqgrid.ui.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/pqgridf@3.5.0/themes/steelblue/pqgrid.css"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+
+    <script src="https://unpkg.com/pqgridf@3.5.0/pqgrid.min.js"></script>
+    <script src="https://unpkg.com/pqgridf@3.5.0/localize/pq-localize-en.js"></script>
+
+    <script src="https://unpkg.com/file-saver@2.0.1/dist/FileSaver.min.js"></script>
+
+    <style>
+      .pq-grid {
+        font-size: 12px;
+      }
+    </style>
+	
 </head>
 <body
 	data-spy="scroll"

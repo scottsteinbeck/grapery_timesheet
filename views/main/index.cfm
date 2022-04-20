@@ -1,166 +1,103 @@
-<cfoutput>
-<div class="text-center card shadow-sm bg-light border border-5 border-white">
-	<div class="card-body">
-			<div class="col-lg-12 mx-auto">
-
-			<!--- <cfdump var=#datarow#> --->
-			<!--- <table class="table table-striped table-sm table-bordered">
-				<thead>
-					<tr>
-						<th>Contractor Name</th>
-						<th>Crew Code</th>
-						<th>Crew</th>
-						<th>Field Vines per Acre</th>
-						<th>Field</th>
-						<th>Total Acres</th>
-						<th>Variety Name</th>
-						<th>Field Total Vines</th>
-						<th>Operation</th>
-						<th>Operation Name</th>
-						<th>Crew Date</th>
-						<th>Cost / Acre Actual</th>
-						<th>Man Hr / Acre Actual</th>
-						<th>Quality Score</th>
-						<th>Total Vines</th>
-						<th>Acres</th>
-						<th>Leader Hours</th>
-						<th>Assistant Hours</th>
-						<th>Inspector Hours</th>
-						<th>Employee Hours</th>
-						<th>Total Cost</th>
-					</tr>
-				</thead>
-				<tbody>
-
-
-					<cfoutput query="datarow">
-						<cfset vines_per_acre = 0>
-						<cfif isNumeric(datarow.vine_count) && isNumeric(datarow.field_acres1)>
-							<cfset vines_per_acre = numberFormat(datarow.vine_count/datarow.field_acres1)>
-						</cfif>
-						<cfset QC_Hours = 0>
-						<cfset employeeHours = 0>
-						<cfset LeaderHours = 0>
-						<cfset AssistantHours = 0>
-						<cfif isNumeric(datarow.QC_Hours)>
-							<cfset QC_Hours = datarow.QC_Hours>
-						</cfif>
-						<cfif isDate(datarow.TotalCalculatedTime)>
-							<cfset employeeHours = timeformat(datarow.TotalCalculatedTime,"H")>
-						<cfelseif isNumeric(datarow.TotalCalculatedTime)>
-							<cfset employeeHours = datarow.TotalCalculatedTime>
-						</cfif>
-						<cfset total = (
-							(employeeHours*14.25)
-							+(LeaderHours*18.6)
-							+(AssistantHours*16.8)
-							+(QC_Hours*20.75)
-						)*1.32>
-
-						<cfset vineacres = 0>
-						<cfif vines_per_acre && isNumeric(datarow.Totalvines)>
-							<cfset vineacres = datarow.Totalvines/vines_per_acre>
-						</cfif>
-
-						<cfset employeeAcresPerHr = 0>
-						<cfif vineacres gt 0 && isNumeric(employeeHours)>
-							<cfset employeeAcresPerHr = employeeHours/vineacres>
-						</cfif>
-
-						<cfset acresPerHour = 0>
-						<cfif vineacres gt 0>
-							<cfset acresPerHour = total/vineacres>
-						</cfif>
-						<tr>
-							<td><!--Contractor Name--></td>
-							<td>#datarow.crew#</td>
-							<td>#datarow.CrewName#</td>
-							<td>#numberFormat(vines_per_acre)#</td>
-							<td>#fieldcode#</td>
-							<td>#datarow.field_acres1#</td>
-							<td>#datarow.Variety_name#</td>
-							<td>#datarow.vine_count#</td>
-							<td>#datarow.JobCode#</td>
-							<td>#datarow.description#</td>
-							<td nowrap>#datarow.Date#</td>
-							<td>#DollarFormat(acresPerHour)#</td>
-							<td>#decimalformat(employeeAcresPerHr)#</td>
-							<td>#datarow.QC_AVERAGE#</td>
-							<td>#datarow.Totalvines#</td>
-							<td>#decimalformat(vineacres)#</td>
-							<td>#numberFormat(LeaderHours)#</td>
-							<td>#numberFormat(AssistantHours)#</td>
-							<td>#numberFormat(QC_Hours)#</td>
-							<td>#numberFormat(employeeHours)#</td>
-							<td>#DollarFormat(total)#</td>
-						</tr>
-					</cfoutput>
-				</tbody>
-			</table> --->
-			<cfloop array="#prc.data#" index="datarow">
-				<cfset datarow.vines_per_acre = 0>
-				<cfif isNumeric(datarow.vine_count) && isNumeric(datarow.field_acres1)>
-					<cfset datarow.vines_per_acre = numberFormat(datarow.vine_count/datarow.field_acres1)>
-				</cfif>
-				<cfset datarow.QC_Hours = 0>
-				<cfset datarow.employeeHours = 0>
-				<cfset datarow.LeaderHours = 0>
-				<cfset datarow.AssistantHours = 0>
-				<cfif isNumeric(datarow.QC_Hours)>
-					<cfset datarow.QC_Hours = datarow.QC_Hours>
-				</cfif>
-				<cfif isDate(datarow.TotalCalculatedTime)>
-					<cfset employeeHours = timeformat(datarow.TotalCalculatedTime,"H")>
-				<cfelseif isNumeric(datarow.TotalCalculatedTime)>
-					<cfset employeeHours = datarow.TotalCalculatedTime>
-				</cfif>
-				<cfset datarow.total = (
-					(datarow.employeeHours*14.25)
-					+(datarow.LeaderHours*18.6)
-					+(datarow.AssistantHours*16.8)
-					+(datarow.QC_Hours*20.75)
-				)*1.32>
-
-				<cfset datarow.vineacres = 0>
-				<cfif datarow.vines_per_acre && isNumeric(datarow.Totalvines)>
-					<cfset datarow.vineacres = datarow.Totalvines/datarow.vines_per_acre>
-				</cfif>
-
-				<cfset datarow.employeeAcresPerHr = 0>
-				<cfif datarow.vineacres gt 0 && isNumeric(employeeHours)>
-					<cfset datarow.employeeAcresPerHr = datarow.employeeHours/datarow.vineacres>
-				</cfif>
-
-				<cfset datarow.acresPerHour = 0>
-				<cfif datarow.vineacres gt 0>
-					<cfset datarow.acresPerHour = datarow.total/datarow.vineacres>
-				</cfif>
-			</cfloop>
-
-
-			<div id="app">
-					<vue-table-dynamic :params="params">
-						<template v-slot:column-0="{ props }">
-
-						<div class="button-wrapper">
-								<a class="btn  btn-sm btn-outline-primary"><i class="bi bi-files"></i></a>
-								<a class="btn  btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></a>
-								<a class="btn  btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></a>
-						</div>
-						</template>
-					</vue-table-dynamic>
-			</div>
-		</div>
-	</div>
+<!--- <cfdump var="#prc.data#"> --->
+<div id="app">
+    <div style="height: calc(100vh - 115px);">
+        <pq-grid ref="grid" :options="options"></pq-grid>
+    </div>
 </div>
-<style>
-	.button-wrapper {
-		flex: 0 0 150px;
-		justify-content: space-evenly;
-	}
-</style>
+
 <script>
-	var tabledata = #SerializeJSON(prc.data)#;
+    <cfoutput>queryData = #serializeJSON(prc.data)#</cfoutput>
+
+    Vue.component('pq-grid', {
+        props: ['options'],
+        mounted: function() {
+            this.grid = pq.grid(this.$el, this.options);
+        },
+        methods: {
+            export: function() {
+                var blob = this.grid.exportData({
+                    format: 'xlsx',
+                    render: true
+                });
+                if (typeof blob === 'string') {
+                    blob = new Blob([blob]);
+                }
+                saveAs(blob, 'pqGrid.xlsx');
+            }
+        },
+        template: '<div :options="options"></div>'
+    });
+
+    var app = new Vue({
+        el: '#app',
+        data1: queryData,
+        methods: {
+            onExport: function() {
+                debugger;
+                this.$refs.grid.export();
+            }
+        },
+        data: function() {
+            this.options = {
+                showTitle: false,
+                locale: 'en',
+                height: '100%',
+                
+                collapsible: {
+                    show: false,
+                },
+                columnTemplate: { width: 100 },
+                colModel: this.$options.columns1,
+                // animModel: {
+                //     on: true
+                // },
+                dataModel: {
+                    data: this.$options.data1
+                },
+                postRenderInterval: -1,
+                colModel: [
+                    { title: "Edit", editable: false, width: 115, sortable: false,
+                        render: function(ui) {
+                            // console.log(ui.rowIndx);
+                            return "<button class='btn btn-sm btn-outline-primary copy_btn'><i class='bi bi-files'></i></button>  <button class='btn btn-sm btn-outline-secondary edit_btn'><i class='bi bi-pencil-square'></i></button>  <button class='btn btn-sm btn-outline-danger delete_btn'><i class='bi bi-trash3'></i></button>";
+                        },
+                        postRender: function(ui) {
+                            var _self = this;
+                            var cell = _self.getCell(ui);
+
+                            cell.find(".copy_btn").bind("click", function(evt){ console.log(ui.rowIndx + "copy"); });
+                            cell.find(".edit_btn").bind("click", function(evt){ console.log(ui.rowIndx + "edit"); });
+                            cell.find(".delete_btn").bind("click", function(evt){ 
+                                console.log("/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX);
+                                $.ajax({
+                                    url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
+                                    method: "DELETE"
+                                });
+                            });
+                        }
+                    },
+                    { title: "BlockID", width: 100, dataIndx: "BlockID" },
+                    { title: "Crew", width: 50, dataIndx: "Crew" },
+                    { title: "CrewLead", width: 100, dataIndx: "CrewLead" },
+                    { title: "CrewName", width: 100, dataIndx: "CrewName" },
+                    { title: "CrewNumber", width: 100, dataIndx: "CrewNumber" },
+                    { title: "Date", width: 100, dataIndx: "Date" },
+                    { title: "description", width: 130, dataIndx: "description" },
+                    { title: "field_acres1", width: 100, dataIndx: "field_acres1" },
+                    { title: "FieldCode", width: 100, dataIndx: "FieldCode" },
+                    { title: "JobCode", width: 100, dataIndx: "JobCode" },
+                    { title: "QC_Average", width: 100, dataIndx: "QC_Average" },
+                    { title: "QC_Hours", width: 100, dataIndx: "QC_Hours" },
+                    { title: "TotalCalculatedTime", width: 100, dataIndx: "TotalCalculatedTime" },
+                    { title: "Totalvines", width: 100, dataIndx: "Totalvines" },
+                    { title: "Variety_name", width: 100, dataIndx: "Variety_name" },
+                    { title: "vine_count", width: 100, dataIndx: "vine_count" },
+                ]
+            };
+            return {
+                rowIndex: -1,
+            };
+        }
+    });
+
 </script>
-</cfoutput>
-<script src="resources/js/timesheet.js"></script>
