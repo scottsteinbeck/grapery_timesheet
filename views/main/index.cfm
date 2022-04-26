@@ -8,6 +8,66 @@
 <script>
     <cfoutput>queryData = #serializeJSON(prc.data)#</cfoutput>
 
+    <cfoutput>queryTimeEntryForm = #serializeJSON(prc.timeEntryForm)#</cfoutput>
+    <cfoutput>queryJobcodes = #serializeJSON(prc.jobcodes)#</cfoutput>
+    <cfoutput>queryPolyfield = #serializeJSON(prc.polyfield)#</cfoutput>
+    <cfoutput>queryCrew = #serializeJSON(prc.crew)#</cfoutput>
+    // console.log(queryData);
+
+    function numberFormat(val){
+        return Math.round(val * 100)/100
+    }
+
+    var calculateRow = function(rowData) {
+        rowData.vines_per_acre = 0;
+        if( !isNaN(rowData.vine_count) && !isNaN(parseFloat(rowData.field_acres1))){
+            rowData.vines_per_acre = numberFormat(rowData.vine_count/parseFloat(rowData.field_acres1));
+        }
+        rowData.employeeHours = 0;
+        rowData.LeaderHours = 0;
+        rowData.AssistantHours = 0;
+        if( !isNaN(parseFloat(rowData.QC_Hours))){
+            rowData.QC_Hours = parseFloat(rowData.QC_Hours);
+        } else {
+            rowData.QC_Hours = 0;
+        }
+        if( new Date(rowData.TotalCalculatedTime) != 'Invalid Date'){
+            rowData.employeeHours = new Date(rowData.TotalCalculatedTime).getHours();
+        } else if( !isNaN(rowData.TotalCalculatedTime)){
+            rowData.employeeHours = parseFloat(rowData.TotalCalculatedTime);
+        }
+        rowData.total = numberFormat((
+            (rowData.employeeHours*14.25)
+            +(rowData.LeaderHours*18.6)
+            +(rowData.AssistantHours*16.8)
+            +(rowData.QC_Hours*20.75)
+        )*1.32);
+
+        rowData.vineacres = 0;
+        if( rowData.vines_per_acre && !isNaN(parseFloat(rowData.Totalvines))){
+            rowData.vineacres = numberFormat(parseFloat(rowData.Totalvines)/rowData.vines_per_acre);
+        }
+
+        rowData.employeeAcresPerHr = 0;
+        if( rowData.vineacres > 0 && !isNaN(parseFloat(rowData.employeeHours))){
+            rowData.employeeAcresPerHr = rowData.employeeHours/rowData.vineacres;
+        }
+
+        rowData.acresPerHour = 0;
+        if( rowData.vineacres > 0){
+            rowData.acresPerHour = rowData.total/rowData.vineacres;
+        }
+        rowData.crew_info = rowData.Crew + ' ' + rowData.CrewName;
+        
+        return rowData;
+    }
+
+    queryData.map(function(x){
+        return calculateRow(x);
+    });
+
+    // console.log(queryData);
+
     Vue.component('pq-grid', {
         props: ['options'],
         mounted: function() {
@@ -39,6 +99,10 @@
         },
         data: function() {
             this.options = {
+                cellSave: function(evt, ui){
+                    ui.rowData = calculateRow(ui.rowData);
+                    this.refreshRow(ui);
+                },
                 showTitle: false,
                 locale: 'en',
                 height: '100%',
@@ -65,33 +129,79 @@
                             var _self = this;
                             var cell = _self.getCell(ui);
 
-                            cell.find(".copy_btn").bind("click", function(evt){ console.log(ui.rowIndx + "copy"); });
-                            cell.find(".edit_btn").bind("click", function(evt){ console.log(ui.rowIndx + "edit"); });
-                            cell.find(".delete_btn").bind("click", function(evt){ 
-                                console.log("/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX);
+                            cell.find(".copy_btn").bind("click", function(evt){
+                                console.log(ui.rowData.Time_Entry_Form_ROW_INDEX);
                                 $.ajax({
-                                    url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
+                                    url: "/api/v1/timeEntrys",
+                                    method: "POST",
+                                    data: ui.rowData,
+                                });
+                            });
+
+                            cell.find(".edit_btn").bind("click", function(evt){
+                                console.log(ui.rowIndx + "edit");
+                            });
+
+                            cell.find(".delete_btn").bind("click", function(evt){
+                                deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
+                                console.log(deleteUrl);
+                                $.ajax({
+                                    url: deleteUrl,
                                     method: "DELETE"
                                 });
                             });
                         }
                     },
                     { title: "BlockID", width: 100, dataIndx: "BlockID" },
-                    { title: "Crew", width: 50, dataIndx: "Crew" },
-                    { title: "CrewLead", width: 100, dataIndx: "CrewLead" },
-                    { title: "CrewName", width: 100, dataIndx: "CrewName" },
-                    { title: "CrewNumber", width: 100, dataIndx: "CrewNumber" },
-                    { title: "Date", width: 100, dataIndx: "Date" },
-                    { title: "description", width: 130, dataIndx: "description" },
-                    { title: "field_acres1", width: 100, dataIndx: "field_acres1" },
-                    { title: "FieldCode", width: 100, dataIndx: "FieldCode" },
-                    { title: "JobCode", width: 100, dataIndx: "JobCode" },
-                    { title: "QC_Average", width: 100, dataIndx: "QC_Average" },
+
+                    { title: "Crew", width: 50, dataIndx: "Crew", dataType: "float",
+                        editor: {
+                            type: 'select',
+                            valueIndx: "value",
+                            labelIndx: "label",
+                            mapIndices: {"text": "ShipVia", "value": "ShipViaId"},
+                            options: [
+                                { "value": "", "label": "" },
+                                { "value": "SE", "label": "Speedy Express" },
+                                { "value": "UP", "label": "United Package" },
+                                { "value": "FS", "label": "Federal Shipping" }
+                            ]
+                        }
+                    },
+
+                    { title:'Field Vines per Acre', width:150, editable: false, dataIndx: "vines_per_acre"},
+
+                    { title: "Field", width: 100, dataIndx: "FieldCode" },
+
+                    { title: "Total Acres", width: 100, editable: false, dataIndx: "field_acres1"},
+
+                    { title: "Variety Name", width: 100, editable: false, dataIndx: "Variety_name" },
+
+                    { title: "Field Total Vines", width: 100, editable: false, dataIndx: "vine_count"},
+
+                    { title: "Operation Name", width: 130, editable: false, dataIndx: "description" },
+                    
+                    { title: "Crew Date", width: 100, dataIndx: "Date" },
+
+                    { title: "Cost / Acre Actual", width: 100, editable: false, dataIndx: "acresPerHour" },
+
+                    { title: "Man Hr / Acre Actual", width: 100, editable: false, dataIndx: "employeeAcresPerHr"},
+
+                    { title: "Quality Score", width: 100, dataIndx: "QC_Average" },
+
+                    { title: "Total Vines", width: 100, dataIndx: "Totalvines" },
+
+                    { title: "Acres", width: 100, dataIndx: "vineacres"},
+
+                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff"},
+
+                    {title:'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd"},
+                    
                     { title: "QC_Hours", width: 100, dataIndx: "QC_Hours" },
-                    { title: "TotalCalculatedTime", width: 100, dataIndx: "TotalCalculatedTime" },
-                    { title: "Totalvines", width: 100, dataIndx: "Totalvines" },
-                    { title: "Variety_name", width: 100, dataIndx: "Variety_name" },
-                    { title: "vine_count", width: 100, dataIndx: "vine_count" },
+
+                    {title:'Employee Hours', width:100, dataIndx: "employeeHours"},
+
+                    { title: "Total Cost", width: 100, dataIndx: "total"},
                 ]
             };
             return {
