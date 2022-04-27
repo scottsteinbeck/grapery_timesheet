@@ -108,11 +108,11 @@
 	</main>
 
 	<!--- Footer --->
-	<footer class="w-100 bottom-0 position-fixed border-top py-3 mt-5 bg-light">
+	<!--- <footer class="w-100 bottom-0 position-fixed border-top py-3 mt-5 bg-light">
 		<div class="container">
 				<a href="https://www.ortussolutions.com">United Tracking System, LLC</a>
 		</div>
-	</footer>
+	</footer> --->
 
 	<!---js --->
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>

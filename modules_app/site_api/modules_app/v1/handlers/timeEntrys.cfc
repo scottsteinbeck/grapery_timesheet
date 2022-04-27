@@ -11,13 +11,16 @@ component extends="BaseHandler"{
 	}
 
 	function create( event, rc, prc ) {
-		dump(rc); abort;
+		// dump(deserializeJSON(rc.rowIdx)); abort;
 
-		// queryExecute("
-			
-		// ",{
-
-		// });
+		queryExecute("
+			INSERT INTO TIME_ENTRY_FORM_V2
+			SELECT *
+			FROM TIME_ENTRY_FORM_V2
+			WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormRowIndex
+		",{
+			timeEntryFormRowIndex = { value = deserializeJSON(rc.rowIdx), cfsqltype = "cf_sql_integer"}
+		});
     }
 
 	function update( event, rc, prc ) {

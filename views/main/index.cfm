@@ -6,22 +6,51 @@
 </div>
 
 <script>
-    <cfoutput>queryData = #serializeJSON(prc.data)#</cfoutput>
+    <!--- <cfoutput>queryData = #serializeJSON(prc.data)#</cfoutput> --->
 
-    <cfoutput>queryTimeEntryForm = #serializeJSON(prc.timeEntryForm)#</cfoutput>
-    <cfoutput>queryJobcodes = #serializeJSON(prc.jobcodes)#</cfoutput>
-    <cfoutput>queryPolyfield = #serializeJSON(prc.polyfield)#</cfoutput>
-    <cfoutput>queryCrew = #serializeJSON(prc.crew)#</cfoutput>
-    // console.log(queryData);
+    <cfoutput>timeEntryForm = #serializeJSON(prc.timeEntryForm)#</cfoutput>
+    <cfoutput>jobcodes = #serializeJSON(prc.jobcodes)#</cfoutput>
+    <cfoutput>polyfield = #serializeJSON(prc.polyfield)#</cfoutput>
+    <cfoutput>crew = #serializeJSON(prc.crew)#</cfoutput>
+    console.log(crew);
+
+    var jobcodesByJobcode = jobcodes.reduce(function(acc,x){
+        acc[x.jobcode] = String(x.description);
+        return acc;
+    },{});
+
+    var polyfieldByFieldName = polyfield.reduce(function(acc,x){
+        acc[x.field_name] = {
+            displayName: String(x.vine_count) + ", " + String(x.field_acres1) + ", " + String(x.Variety_name),
+            vine_count: x.vine_count,
+            field_acres1: x.field_acres1
+        };
+        return acc;
+    },{});
+
+    var crewByOid = crew.reduce(function(acc,x){
+        acc[x.CrewNumber] = String(x.CrewName) + ", " + String(x.CrewLead) + ", " + String(x.CrewNumber);
+        return acc;
+    },{});
+    // console.table(polyfieldByFieldName);
 
     function numberFormat(val){
         return Math.round(val * 100)/100
     }
 
     var calculateRow = function(rowData) {
+
+        rowData.jobcode_info = jobcodesByJobcode[rowData.JobCode];
+
+        rowData.polyfield = polyfieldByFieldName[rowData.FieldCode]?.displayName;
+        rowData.vine_count = polyfieldByFieldName[rowData.FieldCode]?.vine_count;
+        rowData.field_acres1 = polyfieldByFieldName[rowData.FieldCode]?.field_acres1;
+
+        rowData.crew_info = crewByOid[rowData.Crew];
+
         rowData.vines_per_acre = 0;
         if( !isNaN(rowData.vine_count) && !isNaN(parseFloat(rowData.field_acres1))){
-            rowData.vines_per_acre = numberFormat(rowData.vine_count/parseFloat(rowData.field_acres1));
+            rowData.vines_per_acre = numberFormat(rowData.vine_count / parseFloat(rowData.field_acres1));
         }
         rowData.employeeHours = 0;
         rowData.LeaderHours = 0;
@@ -50,23 +79,22 @@
 
         rowData.employeeAcresPerHr = 0;
         if( rowData.vineacres > 0 && !isNaN(parseFloat(rowData.employeeHours))){
-            rowData.employeeAcresPerHr = rowData.employeeHours/rowData.vineacres;
+            rowData.employeeAcresPerHr = numberFormat(rowData.employeeHours/rowData.vineacres);
         }
 
         rowData.acresPerHour = 0;
         if( rowData.vineacres > 0){
-            rowData.acresPerHour = rowData.total/rowData.vineacres;
+            rowData.acresPerHour = numberFormat(rowData.total/rowData.vineacres);
         }
-        rowData.crew_info = rowData.Crew + ' ' + rowData.CrewName;
         
         return rowData;
     }
 
-    queryData.map(function(x){
+    timeEntryForm.map(function(x){
         return calculateRow(x);
     });
 
-    // console.log(queryData);
+    console.log(timeEntryForm);
 
     Vue.component('pq-grid', {
         props: ['options'],
@@ -90,7 +118,7 @@
 
     var app = new Vue({
         el: '#app',
-        data1: queryData,
+        data1: timeEntryForm,
         methods: {
             onExport: function() {
                 debugger;
@@ -98,6 +126,7 @@
             }
         },
         data: function() {
+
             this.options = {
                 cellSave: function(evt, ui){
                     ui.rowData = calculateRow(ui.rowData);
@@ -112,13 +141,34 @@
                 },
                 columnTemplate: { width: 100 },
                 colModel: this.$options.columns1,
-                // animModel: {
-                //     on: true
-                // },
+                resizable: false,
                 dataModel: {
                     data: this.$options.data1
                 },
                 postRenderInterval: -1,
+
+                toolbar:{
+                    items:[
+                        {
+                            type:'button',
+                            label: 'Toggle filter row',
+                            listener: function(){
+                                this.option('filterModel.header', !this.option('filterModel.header'));
+                                this.refresh();
+                            }
+                        },
+                        {
+                            type:'button',
+                            label: 'Reset filters',
+                            listener: function(){
+                                this.reset({filter: true});							
+                            }                        
+                        }
+                    ]
+                },
+
+                filterModel: { on: true, model: "AND", header: true },
+                    
                 colModel: [
                     { title: "Edit", editable: false, width: 115, sortable: false,
                         render: function(ui) {
@@ -130,48 +180,59 @@
                             var cell = _self.getCell(ui);
 
                             cell.find(".copy_btn").bind("click", function(evt){
-                                console.log(ui.rowData.Time_Entry_Form_ROW_INDEX);
+                                _self.showLoading();
                                 $.ajax({
                                     url: "/api/v1/timeEntrys",
                                     method: "POST",
-                                    data: ui.rowData,
+                                    data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX },
+                                }).done(function(){
+                                
+                                    _self.hideLoading();
                                 });
-                            });
+                            })
 
                             cell.find(".edit_btn").bind("click", function(evt){
                                 console.log(ui.rowIndx + "edit");
                             });
 
                             cell.find(".delete_btn").bind("click", function(evt){
+                                _self.showLoading();
                                 deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
-                                console.log(deleteUrl);
                                 $.ajax({
                                     url: deleteUrl,
                                     method: "DELETE"
+                                }).done(function(){
+                                    _self.deleteRow(ui.rowIndx);
+                                    _self.hideLoading();
+
                                 });
+
                             });
                         }
                     },
                     { title: "BlockID", width: 100, dataIndx: "BlockID" },
 
-                    { title: "Crew", width: 50, dataIndx: "Crew", dataType: "float",
+                    { title: "Crew", width: 250, dataIndx: "Crew", dataType: "float",
                         editor: {
                             type: 'select',
-                            valueIndx: "value",
-                            labelIndx: "label",
-                            mapIndices: {"text": "ShipVia", "value": "ShipViaId"},
-                            options: [
-                                { "value": "", "label": "" },
-                                { "value": "SE", "label": "Speedy Express" },
-                                { "value": "UP", "label": "United Package" },
-                                { "value": "FS", "label": "Federal Shipping" }
-                            ]
+                            valueIndx: "CrewNumber",
+                            labelIndx: "CrewName",
+                            mapIndices: { CrewNumber: 'Crew', CrewName: 'crew_info' },
+                            options: crew
                         }
                     },
 
                     { title:'Field Vines per Acre', width:150, editable: false, dataIndx: "vines_per_acre"},
 
-                    { title: "Field", width: 100, dataIndx: "FieldCode" },
+                    { title: "Field", width: 100, dataIndx: "FieldCode",
+                        editor: {
+                            type: 'select',
+                            valueIndx: "field_name",
+                            labelIndx: "field_name",
+                            options: polyfield
+                        },
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
+                    },
 
                     { title: "Total Acres", width: 100, editable: false, dataIndx: "field_acres1"},
 
@@ -195,13 +256,22 @@
 
                     { title: "Leader Hours", width: 100, dataIndx: "TimeDiff"},
 
-                    {title:'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd"},
+                    {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd"},
                     
                     { title: "QC_Hours", width: 100, dataIndx: "QC_Hours" },
 
-                    {title:'Employee Hours', width:100, dataIndx: "employeeHours"},
+                    {title: 'Employee Hours', width:100, dataIndx: "employeeHours"},
 
                     { title: "Total Cost", width: 100, dataIndx: "total"},
+
+                    { title: "Jobcode", width: 100, dataIndx: "JobCode",
+                        editor: {
+                            type: 'select',
+                            valueIndx: "jobcode",
+                            labelIndx: "description",
+                            options: jobcodes
+                        }
+                    },
                 ]
             };
             return {
