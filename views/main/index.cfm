@@ -3,8 +3,10 @@
     <div style="height: calc(100vh - 115px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
     </div>
+    
+    <button class="btn btn-success m-2" @click="saveData()">Save</button>
 </div>
-
+    
 <script>
     <!--- <cfoutput>queryData = #serializeJSON(prc.data)#</cfoutput> --->
 
@@ -12,7 +14,7 @@
     <cfoutput>jobcodes = #serializeJSON(prc.jobcodes)#</cfoutput>
     <cfoutput>polyfield = #serializeJSON(prc.polyfield)#</cfoutput>
     <cfoutput>crew = #serializeJSON(prc.crew)#</cfoutput>
-    console.log(crew);
+    // console.log("crew", crew);
 
     var jobcodesByJobcode = jobcodes.reduce(function(acc,x){
         acc[x.jobcode] = String(x.description);
@@ -29,7 +31,9 @@
     },{});
 
     var crewByOid = crew.reduce(function(acc,x){
-        acc[x.CrewNumber] = String(x.CrewName) + ", " + String(x.CrewLead) + ", " + String(x.CrewNumber);
+        if(String(x.CrewName) != "")
+            acc[x.CrewNumber] = String(x.CrewName) + " (" + String(x.CrewLead) + ")";
+        else acc[x.CrewNumber] = "Unnamed (" + String(x.CrewLead) + ")";
         return acc;
     },{});
     // console.table(polyfieldByFieldName);
@@ -94,7 +98,7 @@
         return calculateRow(x);
     });
 
-    console.log(timeEntryForm);
+    // console.log(timeEntryForm);
 
     Vue.component('pq-grid', {
         props: ['options'],
@@ -123,6 +127,17 @@
             onExport: function() {
                 debugger;
                 this.$refs.grid.export();
+            },
+
+            saveData: function()
+            {
+                console.log("Saving");
+
+                // $.ajax({
+                //     url:,
+                //     method:,
+                //     data:
+                // });
             }
         },
         data: function() {
@@ -133,6 +148,7 @@
                     this.refreshRow(ui);
                 },
                 showTitle: false,
+                showTop: false,
                 locale: 'en',
                 height: '100%',
                 
@@ -161,7 +177,7 @@
                             type:'button',
                             label: 'Reset filters',
                             listener: function(){
-                                this.reset({filter: true});							
+                                this.reset({filter: true});
                             }                        
                         }
                     ]
@@ -170,31 +186,40 @@
                 filterModel: { on: true, model: "AND", header: true },
                     
                 colModel: [
-                    { title: "Edit", editable: false, width: 115, sortable: false,
+                    { title: "Edit", editable: false, width: 75, sortable: false,
                         render: function(ui) {
                             // console.log(ui.rowIndx);
-                            return "<button class='btn btn-sm btn-outline-primary copy_btn'><i class='bi bi-files'></i></button>  <button class='btn btn-sm btn-outline-secondary edit_btn'><i class='bi bi-pencil-square'></i></button>  <button class='btn btn-sm btn-outline-danger delete_btn'><i class='bi bi-trash3'></i></button>";
+                            return "<button class='btn btn-sm btn-outline-primary copy_btn'><i class='bi bi-files'></i></button> <button class='btn btn-sm btn-outline-danger delete_btn'><i class='bi bi-trash3'></i></button>";
                         },
                         postRender: function(ui) {
                             var _self = this;
                             var cell = _self.getCell(ui);
-
+                            
+                            // Copy button ---------------------------------------
                             cell.find(".copy_btn").bind("click", function(evt){
+
+                                newRecieptnoVal = ui.rowData.RECIEPTNO.split("-")[0] + "_" + timeEntryForm.reduce(function(acc, x){
+                                    if(x.RECIEPTNO.split("-")[0] == ui.rowData.RECIEPTNO.split("-")[0]) acc++;
+                                    return acc;
+                                },0);
+
                                 _self.showLoading();
                                 $.ajax({
                                     url: "/api/v1/timeEntrys",
                                     method: "POST",
-                                    data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX },
+                                    data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX, newRecieptnoVal: newRecieptnoVal},
                                 }).done(function(){
-                                
+
+                                    var copedRowData = Object.assign({}, ui.rowData);
+                                    copedRowData.RECIEPTNO = newRecieptnoVal;
+                                    var rowIndex = _self.addRow({ rowIndxPage: 0, rowData: copedRowData, checkEditable: false, rowIndx: ui.rowIndx });
+                                    _self.refreshRow({ rowIndx: rowIndex });
+
                                     _self.hideLoading();
                                 });
-                            })
-
-                            cell.find(".edit_btn").bind("click", function(evt){
-                                console.log(ui.rowIndx + "edit");
                             });
 
+                            // Delete button ---------------------------------------
                             cell.find(".delete_btn").bind("click", function(evt){
                                 _self.showLoading();
                                 deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
@@ -212,15 +237,18 @@
                     },
                     { title: "BlockID", width: 100, dataIndx: "BlockID" },
 
-                    { title: "Crew", width: 250, dataIndx: "Crew", dataType: "float",
+                    { title: "Crew", dataIndx: "crew_info", width: 250,
                         editor: {
                             type: 'select',
                             valueIndx: "CrewNumber",
                             labelIndx: "CrewName",
                             mapIndices: { CrewNumber: 'Crew', CrewName: 'crew_info' },
                             options: crew
-                        }
+                        },
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
                     },
+
+                    { dataIndx: "Crew", hidden:true },
 
                     { title:'Field Vines per Acre', width:150, editable: false, dataIndx: "vines_per_acre"},
 
@@ -264,14 +292,18 @@
 
                     { title: "Total Cost", width: 100, dataIndx: "total"},
 
-                    { title: "Jobcode", width: 100, dataIndx: "JobCode",
+                    { title: "Jobcode", width: 200, dataIndx: "jobcode_info",
                         editor: {
                             type: 'select',
                             valueIndx: "jobcode",
                             labelIndx: "description",
+                            mapIndices: {jobcode: "JobCode", description: "jobcode_info"},
                             options: jobcodes
-                        }
+                        },
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
                     },
+
+                    { dataIndx: "JobCode", hidden: true },
                 ]
             };
             return {
