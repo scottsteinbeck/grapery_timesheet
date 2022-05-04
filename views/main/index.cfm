@@ -3,8 +3,6 @@
     <div style="height: calc(100vh - 115px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
     </div>
-    
-    <button class="btn btn-success m-2" @click="saveData()">Save</button>
 </div>
     
 <script>
@@ -14,7 +12,7 @@
     <cfoutput>jobcodes = #serializeJSON(prc.jobcodes)#</cfoutput>
     <cfoutput>polyfield = #serializeJSON(prc.polyfield)#</cfoutput>
     <cfoutput>crew = #serializeJSON(prc.crew)#</cfoutput>
-    // console.log("crew", crew);
+    // console.log(timeEntryForm);
 
     var jobcodesByJobcode = jobcodes.reduce(function(acc,x){
         acc[x.jobcode] = String(x.description);
@@ -128,25 +126,29 @@
                 debugger;
                 this.$refs.grid.export();
             },
-
-            saveData: function()
-            {
-                console.log("Saving");
-
-                // $.ajax({
-                //     url:,
-                //     method:,
-                //     data:
-                // });
-            }
         },
         data: function() {
 
             this.options = {
                 cellSave: function(evt, ui){
+                    var _self = this;
+                    
+                    _self.showLoading();
                     ui.rowData = calculateRow(ui.rowData);
+
+                    $.ajax({
+                        url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
+                        method: "PUT",
+                        data: { rowData: JSON.stringify(ui.rowData),
+                            newRowData: JSON.stringify(ui.newVal), 
+                            oldRowData: JSON.stringify(ui.oldVal) }
+                    }).done(function(){
+                        _self.hideLoading();
+                    });
+
                     this.refreshRow(ui);
                 },
+
                 showTitle: false,
                 showTop: false,
                 locale: 'en',
@@ -207,7 +209,9 @@
                                 $.ajax({
                                     url: "/api/v1/timeEntrys",
                                     method: "POST",
-                                    data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX, newRecieptnoVal: newRecieptnoVal},
+                                    data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX,
+                                        newRecieptnoVal: newRecieptnoVal
+                                    },
                                 }).done(function(){
 
                                     var copedRowData = Object.assign({}, ui.rowData);
@@ -223,13 +227,14 @@
                             cell.find(".delete_btn").bind("click", function(evt){
                                 _self.showLoading();
                                 deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
+
                                 $.ajax({
                                     url: deleteUrl,
-                                    method: "DELETE"
+                                    method: "DELETE",
+                                    data: { reciept: ui.rowData.RECIEPTNO }
                                 }).done(function(){
-                                    _self.deleteRow(ui.rowIndx);
+                                    _self.deleteRow({ rowIndx: ui.rowIndx });
                                     _self.hideLoading();
-
                                 });
 
                             });

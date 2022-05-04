@@ -1,8 +1,21 @@
 component extends="coldbox.system.EventHandler" {
 
+	
+	function changeLog(event, rc, prc){
+		prc.changeLogData = queryExecute("
+			SELECT *
+			FROM change_log
+			WHERE clDate > :showToDate
+		",
+		{
+			showToDate = { value = dateAdd('m', -1, now()), cfsqltype = "cf_sql_date"}
+		},
+		{ returnType = 'array'});
+	}
+
 	/**
 	 * Default Action
-	 */
+	*/
 	function index( event, rc, prc ) {
 		prc.welcomeMessage = "Welcome to ColdBox!";
 		event.setView( "main/index" );
@@ -20,7 +33,7 @@ component extends="coldbox.system.EventHandler" {
 			FROM TIME_ENTRY_FORM_V2
 			WHERE TIME_ENTRY_FORM_V2.jobcode != 'NULL' AND TIME_ENTRY_FORM_V2.deleteDate IS NULL
 			ORDER BY TIME_ENTRY_FORM_V2.Date, TIME_ENTRY_FORM_V2.RECIEPTNO
-			-- LIMIT 100
+			LIMIT 100
 		",{},{ returnType = 'array'});
 
 		prc.jobcodes = queryExecute("
