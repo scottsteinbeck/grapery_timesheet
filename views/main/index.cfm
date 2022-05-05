@@ -1,5 +1,15 @@
 <!--- <cfdump var="#prc.data#"> --->
 <div id="app">
+    
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" href="#">Data</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/main/changeLog">Change log</a>
+        </li>
+    </ul>
+
     <div style="height: calc(100vh - 115px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
     </div>
@@ -50,6 +60,11 @@
 
         rowData.crew_info = crewByOid[rowData.Crew];
 
+        if(rowData.Date != ""){
+            var date = new Date(rowData.Date);
+            rowData.Date = ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1))) + '/' + ((date.getDate() > 9) ? date.getDate() : ('0' + date.getDate())) + '/' + date.getFullYear();
+        }
+
         rowData.vines_per_acre = 0;
         if( !isNaN(rowData.vine_count) && !isNaN(parseFloat(rowData.field_acres1))){
             rowData.vines_per_acre = numberFormat(rowData.vine_count / parseFloat(rowData.field_acres1));
@@ -96,8 +111,6 @@
         return calculateRow(x);
     });
 
-    // console.log(timeEntryForm);
-
     Vue.component('pq-grid', {
         props: ['options'],
         mounted: function() {
@@ -130,23 +143,68 @@
         data: function() {
 
             this.options = {
-                cellSave: function(evt, ui){
-                    var _self = this;
-                    
-                    _self.showLoading();
-                    ui.rowData = calculateRow(ui.rowData);
+                
+                pqIS: {
+                    totalRecords: 0,
+                    pending: true,
+                    data: [],
+                    requestPage: 1,
+                    rpp: 100, //records per request.
+                    init: function () {
+                        this.data = [];
+                        this.requestPage = 1;
+                    }
+                },
 
-                    $.ajax({
-                        url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
-                        method: "PUT",
-                        data: { rowData: JSON.stringify(ui.rowData),
-                            newRowData: JSON.stringify(ui.newVal), 
-                            oldRowData: JSON.stringify(ui.oldVal) }
-                    }).done(function(){
-                        _self.hideLoading();
-                    });
+                filterModel: { on: true, header: true, type: 'remote' },
+                sortModel: { type: 'remote', sorter: [{ dataIndx: 'Date', dir: 'up'}] },
+                beforeSort: function (evt) {
+                    if (evt.originalEvent) {//only if sorting done through header cell click.
+                        this.options.pqIS.init();
+                    }
+                },
+                beforeTableView: function (evt, ui) {
 
-                    this.refreshRow(ui);
+                    var finalV = ui.finalV,
+                        data = this.options.pqIS.data;
+                    if (ui.initV == null) {
+                        return;
+                    }
+                    if (!this.options.pqIS.pending && finalV >= data.length - 1 && data.length < this.options.pqIS.totalRecords) {
+                        this.options.pqIS.requestPage++;
+                        this.options.pqIS.pending = true;
+                        //request more rows.
+                        this.refreshDataAndView();
+                    }
+                },
+
+                dataModel: {
+                    dataType: "JSON",
+                    location: "remote",
+                    url: "/api/v1/timeEntrys",
+                    postData: function () {
+                        return {
+                            pq_curpage: this.options.pqIS.requestPage,
+                            pq_rpp: this.options.pqIS.rpp
+                        };
+                    },
+                    getData: function (response) {
+                        var data = response.data,
+                            len = data.length,
+                            curPage = response.curPage,
+                            pq_data = this.options.pqIS.data,
+                            init = (curPage - 1) * this.options.pqIS.rpp;
+                            
+                        this.options.pqIS.pending = false;
+                        this.options.pqIS.totalRecords = response.totalRecords;
+                        for (var i = 0; i < len; i++) {
+                            pq_data[i + init] = calculateRow(data[i]);
+                        }
+                        return { data: pq_data }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        //alert(errorThrown);
+                    }
                 },
 
                 showTitle: false,
@@ -160,32 +218,38 @@
                 columnTemplate: { width: 100 },
                 colModel: this.$options.columns1,
                 resizable: false,
-                dataModel: {
-                    data: this.$options.data1
-                },
                 postRenderInterval: -1,
+                virtualX: true, virtualY: true,
 
-                toolbar:{
-                    items:[
-                        {
-                            type:'button',
-                            label: 'Toggle filter row',
-                            listener: function(){
-                                this.option('filterModel.header', !this.option('filterModel.header'));
-                                this.refresh();
-                            }
-                        },
-                        {
-                            type:'button',
-                            label: 'Reset filters',
-                            listener: function(){
-                                this.reset({filter: true});
-                            }                        
-                        }
-                    ]
+                cellSave: function(evt, ui){
+                    var _self = this;
+                    
+                    _self.showLoading();
+                    ui.rowData = calculateRow(ui.rowData);
+
+                    var newData = {};
+                    var oldData = {};
+                    if(typeof ui.newVal != "object") {
+                        newData[ui.column.dataIndx] = ui.newVal;
+                        oldData[ui.column.dataIndx] = ui.oldVal;
+                    }
+                    else {
+                        newData = ui.newVal;
+                        oldData = ui.oldVal;
+                    }
+
+                    $.ajax({
+                        url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
+                        method: "PUT",
+                        data: { rowData: JSON.stringify(ui.rowData),
+                            newRowData: JSON.stringify(newData), 
+                            oldRowData: JSON.stringify(oldData) }
+                    }).done(function(){
+                        _self.hideLoading();
+                    });
+
+                    this.refreshRow(ui);
                 },
-
-                filterModel: { on: true, model: "AND", header: true },
                     
                 colModel: [
                     { title: "Edit", editable: false, width: 75, sortable: false,
@@ -240,9 +304,10 @@
                             });
                         }
                     },
-                    { title: "BlockID", width: 100, dataIndx: "BlockID" },
+                    { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Crew", dataIndx: "crew_info", width: 250,
+                    { title: "Crew", dataIndx: "crew_info", width: 250, dataType: "string",
                         editor: {
                             type: 'select',
                             valueIndx: "CrewNumber",
@@ -253,11 +318,12 @@
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
                     },
 
-                    { dataIndx: "Crew", hidden:true },
+                    { dataIndx: "Crew", hidden:true, dataType: "integer" },
 
-                    { title:'Field Vines per Acre', width:150, editable: false, dataIndx: "vines_per_acre"},
+                    { title:'Field Vines per Acre', width:150, editable: false, dataIndx: "vines_per_acre", dataType: "float",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Field", width: 100, dataIndx: "FieldCode",
+                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string",
                         editor: {
                             type: 'select',
                             valueIndx: "field_name",
@@ -267,37 +333,52 @@
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
                     },
 
-                    { title: "Total Acres", width: 100, editable: false, dataIndx: "field_acres1"},
+                    { title: "Total Acres", width: 100, editable: false, dataIndx: "field_acres1", dataType: "float",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Variety Name", width: 100, editable: false, dataIndx: "Variety_name" },
+                    { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Field Total Vines", width: 100, editable: false, dataIndx: "vine_count"},
+                    { title: "Field Total Vines", width: 100, editable: false, dataIndx: "vine_count", dataType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Operation Name", width: 130, editable: false, dataIndx: "description" },
+                    { title: "Operation Name", width: 130, dataIndx: "description", dataType: "string",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                     
-                    { title: "Crew Date", width: 100, dataIndx: "Date" },
+                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "date",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Cost / Acre Actual", width: 100, editable: false, dataIndx: "acresPerHour" },
+                    { title: "Cost / Acre Actual", width: 100, editable: false, dataIndx: "acresPerHour", dataType: "float",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Man Hr / Acre Actual", width: 100, editable: false, dataIndx: "employeeAcresPerHr"},
+                    { title: "Man Hr / Acre Actual", width: 100, editable: false, dataIndx: "employeeAcresPerHr", dataType: "float",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Quality Score", width: 100, dataIndx: "QC_Average" },
+                    { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Total Vines", width: 100, dataIndx: "Totalvines" },
+                    { title: "Total Vines", width: 100, dataIndx: "Totalvines", dateType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Acres", width: 100, dataIndx: "vineacres"},
+                    { title: "Acres", width: 100, editable: false, dataIndx: "vineacres", dateType: "float",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff"},
+                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd"},
+                    {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd", dataType: "string",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                     
-                    { title: "QC_Hours", width: 100, dataIndx: "QC_Hours" },
+                    { title: "QC_Hours", width: 100, dataIndx: "QC_Hours", dateType: "float",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    {title: 'Employee Hours', width:100, dataIndx: "employeeHours"},
+                    {title: 'Employee Hours', width:100, dataIndx: "employeeHours", editable: false, dateType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Total Cost", width: 100, dataIndx: "total"},
+                    { title: "Total Cost", width: 100, dataIndx: "total", editable: false, editable: false, dateType: "float",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Jobcode", width: 200, dataIndx: "jobcode_info",
+                    { title: "Jobcode", width: 200, dataIndx: "jobcode_info", dateType: "string",
                         editor: {
                             type: 'select',
                             valueIndx: "jobcode",
@@ -308,7 +389,7 @@
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
                     },
 
-                    { dataIndx: "JobCode", hidden: true },
+                    { dataIndx: "JobCode", hidden: true, dateType: "integer" },
                 ]
             };
             return {
