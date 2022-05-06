@@ -18,7 +18,7 @@
 <script>
     <!--- <cfoutput>queryData = #serializeJSON(prc.data)#</cfoutput> --->
 
-    <cfoutput>timeEntryForm = #serializeJSON(prc.timeEntryForm)#</cfoutput>
+    <!--- <cfoutput>timeEntryForm = #serializeJSON(prc.timeEntryForm)#</cfoutput> --->
     <cfoutput>jobcodes = #serializeJSON(prc.jobcodes)#</cfoutput>
     <cfoutput>polyfield = #serializeJSON(prc.polyfield)#</cfoutput>
     <cfoutput>crew = #serializeJSON(prc.crew)#</cfoutput>
@@ -107,9 +107,9 @@
         return rowData;
     }
 
-    timeEntryForm.map(function(x){
-        return calculateRow(x);
-    });
+    // timeEntryForm.map(function(x){
+    //     return calculateRow(x);
+    // });
 
     Vue.component('pq-grid', {
         props: ['options'],
@@ -133,7 +133,7 @@
 
     var app = new Vue({
         el: '#app',
-        data1: timeEntryForm,
+        // data1: timeEntryForm,
         methods: {
             onExport: function() {
                 debugger;
@@ -152,8 +152,9 @@
                     rpp: 100, //records per request.
                     init: function () {
                         this.data = [];
+                        console.log("clear data",JSON.parse(JSON.stringify(this.data)), +new Date());
                         this.requestPage = 1;
-                        console.log(this.requestPage);
+                        return this.data;
                     }
                 },
 
@@ -165,7 +166,6 @@
                     }
                 },
                 beforeTableView: function (evt, ui) {
-
                     var finalV = ui.finalV,
                         data = this.options.pqIS.data;
                     if (ui.initV == null) {
@@ -196,13 +196,13 @@
                         pq_data = this.options.pqIS.data,
                         init = (curPage - 1) * this.options.pqIS.rpp;
                         
-                        console.log(this.options.pqIS);
-
+                        
                         this.options.pqIS.pending = false;
                         this.options.pqIS.totalRecords = response.totalRecords;
                         for (var i = 0; i < len; i++) {
                             pq_data[i + init] = calculateRow(data[i]);
                         }
+                        console.log("Get data", JSON.parse(JSON.stringify(this.options.pqIS.data)), +new Date());
                         return { data: pq_data }
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
@@ -266,8 +266,7 @@
                             
                             // Copy button ---------------------------------------
                             cell.find(".copy_btn").bind("click", function(evt){
-
-                                newRecieptnoVal = ui.rowData.RECIEPTNO.split("-")[0] + "_" + timeEntryForm.reduce(function(acc, x){
+                                newRecieptnoVal = ui.rowData.RECIEPTNO.split("-")[0] + "_" + app.options.pqIS.data.reduce(function(acc, x){
                                     if(x.RECIEPTNO.split("-")[0] == ui.rowData.RECIEPTNO.split("-")[0]) acc++;
                                     return acc;
                                 },0);
@@ -335,7 +334,11 @@
                         },
                         filter: { condition: 'begin', listeners: [{'change' : function(evt, item){
                             var grid = $(this).closest(".pq-grid");
-                            grid.pqGrid("option").pqIS.init();
+                            console.log("returned data", grid.pqGrid("option").pqIS.init(), +new Date());
+                            // grid.pqGrid( { dataModel: { data: grid.pqGrid("option").pqIS.data } });
+
+                            console.log("Filter", JSON.parse(JSON.stringify(app.options.pqIS.data)), +new Date());
+
                             grid.pqGrid('filter', {
                                 oper: 'replace',
                                 data: [{dataIndx: item.dataIndx, value: item.value}]

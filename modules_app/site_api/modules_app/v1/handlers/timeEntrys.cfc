@@ -13,12 +13,18 @@ component extends="BaseHandler"{
 		// if(rc.keyExists("pq_filter")) {dump(rc.pq_filter); abort;}
 
 		selectItems = ["BlockID", "Crew",
-			"FieldCode", "JobCode", "Date",
+			"FieldCode", "TIME_ENTRY_FORM_V2.JobCode", "Date",
 			"QC_Average", "Totalvines", "QC_Hours",
 			"TotalCalculatedTime",
 			"Time_Entry_Form_ROW_INDEX",
 			"RECIEPTNO",
 			"TimeDiff", "TimeDiff2nd", "TimeDiff3rd"
+		];
+
+		selectRawItems = [
+			"(vine_count / field_acres1) AS vines_per_acre",
+			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) AS total",
+			"(SELECT (Totalvines / (vine_count / field_acres1)) AS vineacres"
 		];
 
 		if(rc.keyExists("pq_sort")) {
@@ -38,8 +44,12 @@ component extends="BaseHandler"{
 				}
 			}).count();
 
-		var query1 = qb.newQuery().from('TIME_ENTRY_FORM_V2')
+		var timeEntryForm = qb.newQuery().from('TIME_ENTRY_FORM_V2')
+			.selectRaw(selectRawItems.toList(', '))
 			.select(selectItems)
+			.join('JOBCODES', 'TIME_ENTRY_FORM_V2.JobCode', '=', 'JOBCODES.jobcode')
+			.join('CREW', 'TIME_ENTRY_FORM_V2.Crew', '=', 'CREW.CrewNumber')
+			.join('POLYFIELD', 'TIME_ENTRY_FORM_V2.FieldCode' , '=', 'POLYFIELD.field_name')
 			.limit(rc.pq_rpp)
 			.offset(rc.pq_rpp * (pq_curpage - 1))
 			.orderBy(sortBuy, usendingOrDesending)
@@ -50,8 +60,7 @@ component extends="BaseHandler"{
 				}
 			}).get();
 
-
-		return {"totalRecords": TotalRows, "curPage": rc.pq_curpage, "data": query1 };
+		return {"totalRecords": TotalRows, "curPage": rc.pq_curpage, "data": timeEntryForm };
 	}
 
 	function create( event, rc, prc ) {
