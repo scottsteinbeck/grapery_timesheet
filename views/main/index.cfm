@@ -153,6 +153,7 @@
                     init: function () {
                         this.data = [];
                         this.requestPage = 1;
+                        console.log(this.requestPage);
                     }
                 },
 
@@ -190,11 +191,13 @@
                     },
                     getData: function (response) {
                         var data = response.data,
-                            len = data.length,
-                            curPage = response.curPage,
-                            pq_data = this.options.pqIS.data,
-                            init = (curPage - 1) * this.options.pqIS.rpp;
-                            
+                        len = data.length,
+                        curPage = response.curPage,
+                        pq_data = this.options.pqIS.data,
+                        init = (curPage - 1) * this.options.pqIS.rpp;
+                        
+                        console.log(this.options.pqIS);
+
                         this.options.pqIS.pending = false;
                         this.options.pqIS.totalRecords = response.totalRecords;
                         for (var i = 0; i < len; i++) {
@@ -330,7 +333,14 @@
                             labelIndx: "field_name",
                             options: polyfield
                         },
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
+                        filter: { condition: 'begin', listeners: [{'change' : function(evt, item){
+                            var grid = $(this).closest(".pq-grid");
+                            grid.pqGrid("option").pqIS.init();
+                            grid.pqGrid('filter', {
+                                oper: 'replace',
+                                data: [{dataIndx: item.dataIndx, value: item.value}]
+                            });
+                        }}], type: 'textbox', value: "", on: true }
                     },
 
                     { title: "Total Acres", width: 100, editable: false, dataIndx: "field_acres1", dataType: "float",

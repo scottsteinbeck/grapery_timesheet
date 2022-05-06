@@ -30,7 +30,14 @@ component extends="BaseHandler"{
 			var sortBuy = "Date";
 		}
 
-		var TotalRows = qb.from('TIME_ENTRY_FORM_V2').count();
+		var TotalRows = qb.from('TIME_ENTRY_FORM_V2')
+			.when(rc.keyExists("pq_filter"), function(q){
+				var deserializedFilter = deserializeJSON(rc.pq_filter);
+				for(col in deserializedFilter.data) {
+					q.where(col.dataIndx, "like", col.value & "%");
+				}
+			}).count();
+
 		var query1 = qb.newQuery().from('TIME_ENTRY_FORM_V2')
 			.select(selectItems)
 			.limit(rc.pq_rpp)

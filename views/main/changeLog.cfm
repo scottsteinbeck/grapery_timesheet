@@ -15,7 +15,7 @@
                 <th>Action</th>
                 <th>Reciept</th>
                 <th>Changes</th>
-                <th>Undo</th>
+                <!--- <th>Undo</th> --->
             </tr>
         </thead>
         <tbody>
@@ -28,7 +28,7 @@
                         <!--- <div class="border-bottom"></div> --->
                     </div>
                 </td>
-                <td><button class="btn btn-primary" @click="undo(logData.clOldRowData, logData.clTEFID)"><i class="bi bi-arrow-counterclockwise"></i></button></td>
+                <!--- <td><button class="btn btn-primary" @click="undo(logData.clOldRowData, logData.clTEFID)"><i class="bi bi-arrow-counterclockwise"></i></button></td> --->
             </tr>
         </tbody>
     </table>
