@@ -12,20 +12,19 @@ component extends="BaseHandler"{
 	function index( event, rc, prc ) {
 		// if(rc.keyExists("pq_filter")) {dump(rc.pq_filter); abort;}
 
-		selectItems = ["BlockID", "Crew",
-			"FieldCode", "TIME_ENTRY_FORM_V2.JobCode", "Date",
-			"QC_Average", "Totalvines", "QC_Hours",
-			"TotalCalculatedTime",
-			"Time_Entry_Form_ROW_INDEX",
-			"RECIEPTNO",
-			"TimeDiff", "TimeDiff2nd", "TimeDiff3rd"
-		];
-
-		selectRawItems = [
+		selectItems = arrayMerge(getQueryColNames(), [
 			"(vine_count / field_acres1) AS vines_per_acre",
+
 			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) AS total",
-			"(SELECT (Totalvines / (vine_count / field_acres1)) AS vineacres"
-		];
+
+			"(Totalvines / (vine_count / field_acres1)) AS vineacres",
+
+			// employeeHours / vineacres = employeeAcresPerHr
+			"HOUR(TotalCalculatedTime) / (Totalvines / (vine_count / field_acres1)) AS employeeAcresPerHr",
+
+			// total / vineacres = acresPerHour
+			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) / (Totalvines / (vine_count / field_acres1)) AS acresPerHour"
+		]);
 
 		if(rc.keyExists("pq_sort")) {
 			var usendingOrDesending = (deserializeJSON(rc.pq_sort)[1].dir == "up") ? "desc" : "asc";
@@ -36,31 +35,34 @@ component extends="BaseHandler"{
 			var sortBuy = "Date";
 		}
 
-		var TotalRows = qb.from('TIME_ENTRY_FORM_V2')
-			.when(rc.keyExists("pq_filter"), function(q){
-				var deserializedFilter = deserializeJSON(rc.pq_filter);
-				for(col in deserializedFilter.data) {
-					q.where(col.dataIndx, "like", col.value & "%");
-				}
-			}).count();
-
 		var timeEntryForm = qb.newQuery().from('TIME_ENTRY_FORM_V2')
-			.selectRaw(selectRawItems.toList(', '))
-			.select(selectItems)
-			.join('JOBCODES', 'TIME_ENTRY_FORM_V2.JobCode', '=', 'JOBCODES.jobcode')
-			.join('CREW', 'TIME_ENTRY_FORM_V2.Crew', '=', 'CREW.CrewNumber')
-			.join('POLYFIELD', 'TIME_ENTRY_FORM_V2.FieldCode' , '=', 'POLYFIELD.field_name')
-			.limit(rc.pq_rpp)
-			.offset(rc.pq_rpp * (pq_curpage - 1))
+			.selectRaw(selectItems.toList(', '))
+			.leftJoin('JOBCODES', function(j){
+				j.on('TIME_ENTRY_FORM_V2.JobCode', '=', 'JOBCODES.jobcode');
+				j.where('JOBCODES.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_VARCHAR"});
+			})
+			.leftJoin('CREW', function(j){
+				j.on('TIME_ENTRY_FORM_V2.Crew', '=', 'CREW.CrewNumber');
+				j.where('CREW.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_VARCHAR"});
+			})
+			.leftJoin('POLYFIELD', function(j){
+				j.on('TIME_ENTRY_FORM_V2.FieldCode' , '=', 'POLYFIELD.field_name');
+				j.where('POLYFIELD.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_VARCHAR"});
+			})
 			.orderBy(sortBuy, usendingOrDesending)
 			.when(rc.keyExists("pq_filter"), function(q){
 				var deserializedFilter = deserializeJSON(rc.pq_filter);
 				for(col in deserializedFilter.data) {
-					q.where(col.dataIndx, "like", col.value & "%");
+					q.having(col.dataIndx, "like", col.value & "%");
 				}
-			}).get();
+			})
+			.whereNull('deleteDate')
+			.paginate(pq_curpage, rc.pq_rpp);
 
-		return {"totalRecords": TotalRows, "curPage": rc.pq_curpage, "data": timeEntryForm };
+		//dump(timeEntryForm); abort;
+
+		return {"totalRecords": timeEntryForm.pagination.totalRecords, "curPage": timeEntryForm.pagination.page, "data": timeEntryForm.results };
+		// return {"totalRecords": TotalRows, "curPage": rc.pq_curpage, "data": timeEntryForm };
 	}
 
 	function create( event, rc, prc ) {

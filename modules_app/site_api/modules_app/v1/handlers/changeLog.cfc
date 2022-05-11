@@ -14,16 +14,52 @@ component extends="BaseHandler"{
     }
 
 	function update( event, rc, prc ) {
-        dump(rc); abort;
 
-        var setVals = deserializeJSON(rc.clOldData)
+        if(rc.clAction == "edit"){
+            var revertItems = deserializeJSON(rc.clOldData)
+            var setItems = "";
+    
+            for(col in getQueryColNames()){
+                if(revertItems.keyExists(col)){
+                    setItems = col & '=' & revertItems[col];
+                }
+            }
+    
+            queryExecute("
+                UPDATE TIME_ENTRY_FORM_V2
+                SET " & setItems & "
+                WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormIndex
+            ",{
+                timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer" }
+            });
+        }
+        else if(rc.clAction == "copy"){
+            queryExecute("
+                UPDATE TIME_ENTRY_FORM_V2
+                SET deleteDate = :currentDate
+                WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormIndex
+            ",{
+                timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer" },
+                currentDate = { value = now(), cfsqltype = "cf_sql_date" }
+            });
+        }
+        else if(rc.clAction == "delete"){
+            queryExecute("
+                UPDATE TIME_ENTRY_FORM_V2
+                SET deleteDate = NULL
+                WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormIndex
+            ",{
+                timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer" }
+            });
+        }
 
         queryExecute("
-            UPDATE TIME_ENTRY_FORM_V2
-            SET " & setVals & "
-            WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormIndex
+            UPDATE change_log
+            SET restoreDate = :currentDate
+            WHERE clID = :changeLogID
         ",{
-            timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer"}
+            changeLogID = { value = rc.clID, cfsqltype = "cf_sql_integer" },
+            currentDate = { value = now(), cfsqltype = "cf_sql_date" }
         });
     }
 

@@ -15,7 +15,7 @@
                 <th>Action</th>
                 <th>Reciept</th>
                 <th>Changes</th>
-                <!--- <th>Undo</th> --->
+                <th>Undo</th>
             </tr>
         </thead>
         <tbody>
@@ -25,10 +25,9 @@
                 <td>
                     <div v-if="logData.clAction == 'edit'" v-for="(change, key) in logData.clNewRowData">
                         {{key}}: &nbsp;{{logData.clOldRowData[key]}} &nbsp; <i class="bi bi-arrow-right"></i> &nbsp; {{change}}
-                        <!--- <div class="border-bottom"></div> --->
                     </div>
                 </td>
-                <!--- <td><button class="btn btn-primary" @click="undo(logData.clOldRowData, logData.clTEFID)"><i class="bi bi-arrow-counterclockwise"></i></button></td> --->
+                <td><button class="btn btn-primary" @click="undo(logData.clOldRowData, logData.clTEFID, logData.clAction, logData.clID)"><i class="bi bi-arrow-counterclockwise"></i></button></td>
             </tr>
         </tbody>
     </table>
@@ -53,13 +52,11 @@
         },
 
         methods: {
-            undo: function(clOldData, clTEFID) {
-                console.log(clOldData);
-                // return;
+            undo: function(clOldData, clTEFID, clAction, clID) {
                 $.ajax({
                     url: "/api/v1/changeLog/" + clTEFID,
                     method: "PATCH",
-                    data: { clOldData: JSON.stringify(clOldData) }
+                    data: { clOldData: JSON.stringify(clOldData), clAction, clID}
                 });
             },
         }

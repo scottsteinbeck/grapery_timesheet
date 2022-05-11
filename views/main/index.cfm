@@ -9,12 +9,12 @@
             <a class="nav-link" href="/main/changeLog">Change log</a>
         </li>
     </ul>
-
     <div style="height: calc(100vh - 115px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
     </div>
+
 </div>
-    
+
 <script>
     <!--- <cfoutput>queryData = #serializeJSON(prc.data)#</cfoutput> --->
 
@@ -138,8 +138,13 @@
             onExport: function() {
                 debugger;
                 this.$refs.grid.export();
-            },
+            }
         },
+
+        created: function(){
+           
+        },
+
         data: function() {
 
             this.options = {
@@ -291,18 +296,50 @@
 
                             // Delete button ---------------------------------------
                             cell.find(".delete_btn").bind("click", function(evt){
-                                _self.showLoading();
-                                deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
 
-                                $.ajax({
-                                    url: deleteUrl,
-                                    method: "DELETE",
-                                    data: { reciept: ui.rowData.RECIEPTNO }
-                                }).done(function(){
-                                    _self.deleteRow({ rowIndx: ui.rowIndx });
-                                    _self.hideLoading();
+                                $('<div></div>').appendTo('body')
+                                .html('<div><h6> Are you sure you want to delete this item?</h6></div>')
+                                .dialog({
+                                    modal: true,
+                                    title: 'Delete message',
+                                    zIndex: 10000,
+                                    classes:{
+                                        'ui-dialog-titlebar-close': 'ui-button ui-corner-all ui-widget ui-button-icon-only'
+                                    },
+                                    autoOpen: true,
+                                    width: 'auto',
+                                    resizable: false,
+                                    buttons: [{
+                                        text: "Yes",
+                                        class:"ui-button ui-corner-all ui-widget",
+                                        click: function() {
+                                                $( this ).dialog( "close" );
+                                                
+                                                _self.showLoading();
+                                                deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
+                                                $.ajax({
+                                                    url: deleteUrl,
+                                                    method: "DELETE",
+                                                    data: { reciept: ui.rowData.RECIEPTNO }
+                                                }).done(function(){
+                                                    _self.deleteRow({ rowIndx: ui.rowIndx });
+                                                    _self.hideLoading();
+                                                });
+                                            }
+                                        },
+                                        {
+                                            text: "No",
+                                            class:"ui-button ui-corner-all ui-widget",
+                                            click: function() {
+                                                $( this ).dialog( "close" );
+                                                resolt = false;
+                                            }
+                                        }
+                                    ],
+                                    close: function(event, ui) {
+                                        $(this).remove();
+                                    }
                                 });
-
                             });
                         }
                     },
@@ -410,5 +447,7 @@
             };
         }
     });
+
+    
 
 </script>
