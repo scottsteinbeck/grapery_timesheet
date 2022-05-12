@@ -9,7 +9,7 @@
         </li>
     </ul>
 
-    <table class="table table-striped">
+    <table class="table">
         <thead class="table-dark">
             <tr>
                 <th>Action</th>
@@ -19,7 +19,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="logData in changeLogData">
+            <tr v-for="logData in changeLogData" :class="{'table-secondary': logData.clRestoreDate}">
                 <td>{{logData.clAction}}</td>
                 <td>{{logData.clReciept}}</td>
                 <td>
@@ -27,7 +27,14 @@
                         {{key}}: &nbsp;{{logData.clOldRowData[key]}} &nbsp; <i class="bi bi-arrow-right"></i> &nbsp; {{change}}
                     </div>
                 </td>
-                <td><button class="btn btn-primary" @click="undo(logData.clOldRowData, logData.clTEFID, logData.clAction, logData.clID)"><i class="bi bi-arrow-counterclockwise"></i></button></td>
+                <td>
+                    <div v-if="!logData.clRestoreDate">
+                        <button class="btn btn-primary" @click="undo(logData.clOldRowData, logData.clTEFID, logData.clAction, logData.clID)"><i class="bi bi-arrow-counterclockwise"></i></button>
+                    </div>
+                    <div v-if="logData.clRestoreDate">
+                        Restored
+                    </div>
+                </td>
             </tr>
         </tbody>
     </table>
@@ -53,10 +60,18 @@
 
         methods: {
             undo: function(clOldData, clTEFID, clAction, clID) {
+                var _self = this;
+                
                 $.ajax({
                     url: "/api/v1/changeLog/" + clTEFID,
                     method: "PATCH",
                     data: { clOldData: JSON.stringify(clOldData), clAction, clID}
+                }).done(function () {
+
+                    _self.changeLogData.find(function(x) {
+                        return x.clID == clID;
+                    }).clRestoreDate = true;
+
                 });
             },
         }

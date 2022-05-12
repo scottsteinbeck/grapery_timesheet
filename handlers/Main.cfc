@@ -59,6 +59,7 @@ component extends="coldbox.system.EventHandler" {
 			CREW.CrewNumber
 			FROM CREW
 			WHERE CREW.GDB_TO_DATE = '9999-12-31 23:59:59.000'
+			ORDER BY CrewLead
 		",{},{ returnType = 'array'});
 	}
 

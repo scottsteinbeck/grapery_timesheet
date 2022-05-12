@@ -55,7 +55,7 @@ component extends="BaseHandler"{
 
         queryExecute("
             UPDATE change_log
-            SET restoreDate = :currentDate
+            SET clRestoreDate = :currentDate
             WHERE clID = :changeLogID
         ",{
             changeLogID = { value = rc.clID, cfsqltype = "cf_sql_integer" },

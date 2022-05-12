@@ -8,7 +8,11 @@
         <li class="nav-item">
             <a class="nav-link" href="/main/changeLog">Change log</a>
         </li>
+        <!--- <li>
+            <button class="btn btn-success" @click="">+</button>
+        </li> --->
     </ul>
+
     <div style="height: calc(100vh - 115px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
     </div>
@@ -40,8 +44,8 @@
 
     var crewByOid = crew.reduce(function(acc,x){
         if(String(x.CrewName) != "")
-            acc[x.CrewNumber] = String(x.CrewName) + " (" + String(x.CrewLead) + ")";
-        else acc[x.CrewNumber] = "Unnamed (" + String(x.CrewLead) + ")";
+            acc[x.CrewNumber] = String(x.CrewName);
+        else acc[x.CrewNumber] = String(x.CrewLead);
         return acc;
     },{});
     // console.table(polyfieldByFieldName);
@@ -107,10 +111,6 @@
         return rowData;
     }
 
-    // timeEntryForm.map(function(x){
-    //     return calculateRow(x);
-    // });
-
     Vue.component('pq-grid', {
         props: ['options'],
         mounted: function() {
@@ -148,7 +148,132 @@
         data: function() {
 
             this.options = {
+
+                showTitle: false,
+                showTop: true,
+                locale: 'en',
+                height: '100%',
                 
+                collapsible: {
+                    show: false,
+                },
+                columnTemplate: { width: 100 },
+                colModel: this.$options.columns1,
+                resizable: false,
+                postRenderInterval: -1,
+                virtualX: true, virtualY: true,
+                
+                filterModel: { on: true, header: true, type: 'remote' },
+                sortModel: { type: 'remote', sorter: [{ dataIndx: 'Date', dir: 'up' }, { dataIndx: 'RECIEPTNO', dir: 'up' }] },
+                beforeSort: function (evt) {
+                    if (evt.originalEvent) {//only if sorting done through header cell click.
+                        this.options.pqIS.init();
+                    }
+                },
+
+                toolbar:{
+                    items: [
+                        {
+                            type: 'button',
+                            icon: 'ui-icon-plus',
+                            label: 'Add Product',
+                            listener: function () {
+                                var _self = this;
+
+                                var rowData = {
+                                    RECIEPTNO: "",
+                                    crew_info: "",
+                                    Crew: 0,
+                                    vines_per_acre: 0,
+                                    FieldCode: "",
+                                    field_acres1: 0,
+                                    Variety_name: "",
+                                    vine_count: 0,
+                                    description: "",
+                                    Date: new Date(0),
+                                    acresPerHour: 0,
+                                    employeeAcresPerHr: 0,
+                                    QC_Average: 0,
+                                    Totalvines: 0,
+                                    vineacres: 0,
+                                    TimeDiff: "",
+                                    TimeDiff2nd: "",
+                                    QC_Hours: 0,
+                                    employeeHours: 0,
+                                    total: 0,
+                                    jobcode_info: ""
+                                };
+                                var rowIndx = _self.addRow({ rowIndxPage: 0, rowData: rowData, checkEditable: false, rowIndx: 0 });
+                                _self.options.editRow(rowIndx, this);
+                            }
+                        }
+                    ]
+                },
+
+                editRow: function(rowIndx, grid){
+                    var _self = this;
+                    var oldRowData = grid.getRowData({ rowIndx: rowIndx });
+
+                    _self.update(rowIndx, grid);
+
+                    grid.addClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
+                    grid.editFirstCellInRow({ rowIndx: rowIndx });
+
+                    var tr = grid.getRow({ rowIndx: rowIndx });
+                    var btn = tr.find("button.copy_btn");
+
+                    btn.text("Hello")
+                        .unbind("click")
+                        .click(function (evt) {
+                            evt.preventDefault();
+                            _self.options.update(rowIndx, grid, oldRowData);
+                            console.log("saving!");
+                            return false;
+                        });
+
+                    btn.next().button("option", { label: "cancel", icons: {primary: "ui-icon-cancel"} })
+                        .unbind("click")
+                        .click(function (evt) {
+                            grid.quitEditMode();
+                            grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
+                            grid.rollback();
+                        });
+                },
+
+                update: function(rowIndx, grid, oldRowData){
+                    var _self = this;
+
+                    // console.log(rowIndx, grid, oldRowData); return;
+                    
+                    _self.showLoading();
+                    rowData = calculateRow(grid.getRowData({ rowIndx: rowIndx }));
+
+                    var newData = {};
+                    var oldData = {};
+                    if(typeof ui.newVal != "object") {
+                        newData[ui.column.dataIndx] = rowData;
+                        oldData[ui.column.dataIndx] = oldRowData;
+                    }
+                    else {
+                        newData = rowData;
+                        oldData = oldRowData;
+                    }
+                    
+                    // console.log(ui.newVal, ui.oldVal, ui.rowData); return;
+
+                    $.ajax({
+                        url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
+                        method: "PUT",
+                        data: { rowData: JSON.stringify(ui.rowData),
+                            newRowData: JSON.stringify(newData), 
+                            oldRowData: JSON.stringify(oldData) }
+                    }).done(function(){
+                        _self.hideLoading();
+                    });
+
+                    this.refreshRow(ui);
+                },
+
                 pqIS: {
                     totalRecords: 0,
                     pending: true,
@@ -163,13 +288,6 @@
                     }
                 },
 
-                filterModel: { on: true, header: true, type: 'remote' },
-                sortModel: { type: 'remote', sorter: [{ dataIndx: 'Date', dir: 'up'}] },
-                beforeSort: function (evt) {
-                    if (evt.originalEvent) {//only if sorting done through header cell click.
-                        this.options.pqIS.init();
-                    }
-                },
                 beforeTableView: function (evt, ui) {
                     var finalV = ui.finalV,
                         data = this.options.pqIS.data;
@@ -214,50 +332,6 @@
                         //alert(errorThrown);
                     }
                 },
-
-                showTitle: false,
-                showTop: false,
-                locale: 'en',
-                height: '100%',
-                
-                collapsible: {
-                    show: false,
-                },
-                columnTemplate: { width: 100 },
-                colModel: this.$options.columns1,
-                resizable: false,
-                postRenderInterval: -1,
-                virtualX: true, virtualY: true,
-
-                cellSave: function(evt, ui){
-                    var _self = this;
-                    
-                    _self.showLoading();
-                    ui.rowData = calculateRow(ui.rowData);
-
-                    var newData = {};
-                    var oldData = {};
-                    if(typeof ui.newVal != "object") {
-                        newData[ui.column.dataIndx] = ui.newVal;
-                        oldData[ui.column.dataIndx] = ui.oldVal;
-                    }
-                    else {
-                        newData = ui.newVal;
-                        oldData = ui.oldVal;
-                    }
-
-                    $.ajax({
-                        url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
-                        method: "PUT",
-                        data: { rowData: JSON.stringify(ui.rowData),
-                            newRowData: JSON.stringify(newData), 
-                            oldRowData: JSON.stringify(oldData) }
-                    }).done(function(){
-                        _self.hideLoading();
-                    });
-
-                    this.refreshRow(ui);
-                },
                     
                 colModel: [
                     { title: "Edit", editable: false, width: 75, sortable: false,
@@ -271,26 +345,22 @@
                             
                             // Copy button ---------------------------------------
                             cell.find(".copy_btn").bind("click", function(evt){
-                                newRecieptnoVal = ui.rowData.RECIEPTNO.split("-")[0] + "_" + app.options.pqIS.data.reduce(function(acc, x){
-                                    if(x.RECIEPTNO.split("-")[0] == ui.rowData.RECIEPTNO.split("-")[0]) acc++;
-                                    return acc;
-                                },0);
 
                                 _self.showLoading();
                                 $.ajax({
                                     url: "/api/v1/timeEntrys",
                                     method: "POST",
                                     data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX,
-                                        newRecieptnoVal: newRecieptnoVal
+                                        copyReciept: ui.rowData.RECIEPTNO.split("_")[0]
                                     },
-                                }).done(function(){
+                                    success: (function(data){
+                                        var copedRowData = Object.assign({}, ui.rowData);
+                                        copedRowData.RECIEPTNO = data;
+                                        var rowIndex = _self.addRow({ rowIndxPage: 0, rowData: copedRowData, checkEditable: false, rowIndx: ui.rowIndx });
+                                        _self.refreshRow({ rowIndx: rowIndex });
 
-                                    var copedRowData = Object.assign({}, ui.rowData);
-                                    copedRowData.RECIEPTNO = newRecieptnoVal;
-                                    var rowIndex = _self.addRow({ rowIndxPage: 0, rowData: copedRowData, checkEditable: false, rowIndx: ui.rowIndx });
-                                    _self.refreshRow({ rowIndx: rowIndex });
-
-                                    _self.hideLoading();
+                                        _self.hideLoading();
+                                    })
                                 });
                             });
 
@@ -343,15 +413,16 @@
                             });
                         }
                     },
-                    { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "integer",
+
+                    { title: "Reciept Number", width: 100, editable: false, dataIndx: "RECIEPTNO", datatype: "string",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
                     { title: "Crew", dataIndx: "crew_info", width: 250, dataType: "string",
                         editor: {
                             type: 'select',
                             valueIndx: "CrewNumber",
-                            labelIndx: "CrewName",
-                            mapIndices: { CrewNumber: 'Crew', CrewName: 'crew_info' },
+                            labelIndx: "CrewLead",
+                            mapIndices: { CrewNumber: 'Crew', CrewLead: 'crew_info' },
                             options: crew
                         },
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
@@ -394,7 +465,7 @@
 
                     { title: "Operation Name", width: 130, dataIndx: "description", dataType: "string",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
-                    
+                        
                     { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "date",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
@@ -414,14 +485,14 @@
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }}, 
 
                     {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd", dataType: "string",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                     
                     { title: "QC_Hours", width: 100, dataIndx: "QC_Hours", dateType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
-
+                        
                     {title: 'Employee Hours', width:100, dataIndx: "employeeHours", editable: false, dateType: "integer",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
@@ -440,7 +511,14 @@
                     },
 
                     { dataIndx: "JobCode", hidden: true, dateType: "integer" },
-                ]
+
+                    { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+                ],
+
+                editable: function(ui){
+                    return this.hasClass({ rowIndx: ui.rowIndx, cls: 'pq-row-edit' });
+                }
             };
             return {
                 rowIndex: -1,

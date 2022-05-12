@@ -68,33 +68,54 @@ component extends="BaseHandler"{
 	function create( event, rc, prc ) {
 		// dump(rc); abort;
 
-		queryExecute("
-			INSERT INTO TIME_ENTRY_FORM_V2(Time_Entry_Form_ROW_INDEX, Date, JobCode, Crew, JobDescription, ContractorID, Contractor, FieldCode, Name, `In`, `Out`, ID, FirstName, LastName, ID1, Name1, In1, Out1, FirstName1, LastName1, ID2, Name2, In2, Out2, FirstName2, LastName2, Totalunits, Totalvines, StartTime, fulllunchstart, fulllunchstop, Stoptime, VerificationType, RECIEPTNO, QC_Name, QC_Hours, Unitcheck, Verification, ROW_INDEX, TotalCalculatedTime, TotalActualTime, ACTUALMINUTES, AdditionalCrewActual, QC_Average, BlockID, crewstartampm, FullStartTime, crewstopampm, Full_Stop_Time, Break1, Break2, Lunch_in, lunchinampm, Lunch_Out, lunchoutampm, vinecountcheck, Actual_Hours, TimeDiff, TimeDiff2nd, TimeDiff3rd, deleteDate) 
-			SELECT 0, Date, JobCode, Crew, JobDescription, ContractorID, Contractor, FieldCode, Name, `In`, `Out`, ID, FirstName, LastName, ID1, Name1, In1, Out1, FirstName1, LastName1, ID2, Name2, In2, Out2, FirstName2, LastName2, Totalunits, Totalvines, StartTime, fulllunchstart, fulllunchstop, Stoptime, VerificationType, :recieptnoVal, QC_Name, QC_Hours, Unitcheck, Verification, ROW_INDEX, TotalCalculatedTime, TotalActualTime, ACTUALMINUTES, AdditionalCrewActual, QC_Average, BlockID, crewstartampm, FullStartTime, crewstopampm, Full_Stop_Time, Break1, Break2, Lunch_in, lunchinampm, Lunch_Out, lunchoutampm, vinecountcheck, Actual_Hours, TimeDiff, TimeDiff2nd, TimeDiff3rd, deleteDate
-			FROM TIME_ENTRY_FORM_V2
-			WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormRowIndex
-		",{
-			timeEntryFormRowIndex = { value = deserializeJSON(rc.rowIdx), cfsqltype = "cf_sql_integer"},
-			recieptnoVal = { value = rc.newRecieptnoVal, cfsqltype="cf_sql_varchar"}
-		});
+		if(rc.keyExists("copyReciept")) {
+			
+			numberOfCopys = queryExecute("
+				SELECT COUNT(*) AS copys
+				FROM TIME_ENTRY_FORM_V2
+				WHERE RECIEPTNO like :copyReciept
+			",{
+				copyReciept = { value = rc.copyReciept & "_%", cfsqltype="cf_sql_string"}
+			});
 
-		queryExecute("
-			INSERT INTO change_log(clTEFID, clAction, clReciept, clUserID, clDate)
-			VALUES (:tefID, 'copy', :reciept, :userID, :currentDate)
-		",{
-			reciept = { value = rc.newRecieptnoVal, cfsqltype = "cf_sql_varchar" },
-			tefID = { value = deserializeJSON(rc.rowIdx), cfsqltype = "cf_sql_integer" },
-			userID = { value = 1, cfsqltype="cf_sql_integer"},
-			currentDate = { value = now(), cfsqltype="cf_sql_date"}
-		});
+			// dump(numberOfCopys); abort;
+
+			newRecieptName = rc.copyReciept & "_" & numberOfCopys.copys[1] + 1;
+
+			queryExecute("
+				INSERT INTO TIME_ENTRY_FORM_V2(Time_Entry_Form_ROW_INDEX, Date, JobCode, Crew, JobDescription, ContractorID, Contractor, FieldCode, Name, `In`, `Out`, ID, FirstName, LastName, ID1, Name1, In1, Out1, FirstName1, LastName1, ID2, Name2, In2, Out2, FirstName2, LastName2, Totalunits, Totalvines, StartTime, fulllunchstart, fulllunchstop, Stoptime, VerificationType, RECIEPTNO, QC_Name, QC_Hours, Unitcheck, Verification, ROW_INDEX, TotalCalculatedTime, TotalActualTime, ACTUALMINUTES, AdditionalCrewActual, QC_Average, BlockID, crewstartampm, FullStartTime, crewstopampm, Full_Stop_Time, Break1, Break2, Lunch_in, lunchinampm, Lunch_Out, lunchoutampm, vinecountcheck, Actual_Hours, TimeDiff, TimeDiff2nd, TimeDiff3rd, deleteDate) 
+				SELECT null, Date, JobCode, Crew, JobDescription, ContractorID, Contractor, FieldCode, Name, `In`, `Out`, ID, FirstName, LastName, ID1, Name1, In1, Out1, FirstName1, LastName1, ID2, Name2, In2, Out2, FirstName2, LastName2, Totalunits, Totalvines, StartTime, fulllunchstart, fulllunchstop, Stoptime, VerificationType, :recieptnoVal, QC_Name, QC_Hours, Unitcheck, Verification, ROW_INDEX, TotalCalculatedTime, TotalActualTime, ACTUALMINUTES, AdditionalCrewActual, QC_Average, BlockID, crewstartampm, FullStartTime, crewstopampm, Full_Stop_Time, Break1, Break2, Lunch_in, lunchinampm, Lunch_Out, lunchoutampm, vinecountcheck, Actual_Hours, TimeDiff, TimeDiff2nd, TimeDiff3rd, deleteDate
+				FROM TIME_ENTRY_FORM_V2
+				WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormRowIndex
+			",{
+				timeEntryFormRowIndex = { value = deserializeJSON(rc.rowIdx), cfsqltype = "cf_sql_integer"},
+				recieptnoVal = { value = newRecieptName, cfsqltype="cf_sql_varchar"}
+			});
+	
+			queryExecute("
+				INSERT INTO change_log(clTEFID, clAction, clReciept, clUserID, clDate)
+				VALUES (:tefID, 'copy', :reciept, :userID, :currentDate)
+			",{
+				reciept = { value = newRecieptName, cfsqltype = "cf_sql_varchar" },
+				tefID = { value = deserializeJSON(rc.rowIdx), cfsqltype = "cf_sql_integer" },
+				userID = { value = 1, cfsqltype="cf_sql_integer"},
+				currentDate = { value = now(), cfsqltype="cf_sql_date"}
+			});
+
+			return newRecieptName;
+		}
     }
 
 	function update( event, rc, prc ) {
 
 		rowData = deserializeJSON(rc.rowData);
-		// dump(rc.newRowData); abort;
+		// dump(rc.newRowData); dump(rc.oldRowData); abort;
 
-		if(!isNull(rc.newRowData)) {
+		var newRowDataObj = deserializeJSON(rc.newRowData);
+
+		if(!isNull(rc.newRowData) && rc.newRowData != "{}" && rc.newRowData != rc.oldRowData
+			&& !(newRowDataObj.keyExists("crew_info") && !newRowDataObj.keyExists("Crew"))) {
+
 			queryExecute("
 				UPDATE TIME_ENTRY_FORM_V2
 				SET Crew = :crew, FieldCode = :fieldCode, JobCode = :jobCode
