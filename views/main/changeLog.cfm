@@ -7,6 +7,9 @@
         <li class="nav-item">
             <a class="nav-link active" href="#">Change log</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/main/payrates">Payrates</a>
+        </li>
     </ul>
 
     <table class="table">

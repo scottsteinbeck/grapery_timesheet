@@ -1,6 +1,13 @@
 component extends="coldbox.system.EventHandler" {
 
-	
+	function payrates(event, rc, prc) {
+		prc.payrateData = queryExecute("
+			SELECT *
+			FROM payrates
+			ORDER BY pSeason DESC
+		",{},{returnType = 'array'});
+	}
+
 	function changeLog(event, rc, prc){
 		prc.changeLogData = queryExecute("
 			SELECT *

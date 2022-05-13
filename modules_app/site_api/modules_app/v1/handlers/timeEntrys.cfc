@@ -49,6 +49,9 @@ component extends="BaseHandler"{
 				j.on('TIME_ENTRY_FORM_V2.FieldCode' , '=', 'POLYFIELD.field_name');
 				j.where('POLYFIELD.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_VARCHAR"});
 			})
+			.leftJoin('payrates', (j) => {
+				j.on('payrates.pSeason', j.raw('YEAR(Date)'));
+			})
 			.orderBy(sortBuy, usendingOrDesending)
 			.when(rc.keyExists("pq_filter"), function(q){
 				var deserializedFilter = deserializeJSON(rc.pq_filter);
@@ -57,12 +60,12 @@ component extends="BaseHandler"{
 				}
 			})
 			.whereNull('deleteDate')
+			// .toSQL();
 			.paginate(pq_curpage, rc.pq_rpp);
 
-		//dump(timeEntryForm); abort;
+		// dump(timeEntryForm); abort;
 
 		return {"totalRecords": timeEntryForm.pagination.totalRecords, "curPage": timeEntryForm.pagination.page, "data": timeEntryForm.results };
-		// return {"totalRecords": TotalRows, "curPage": rc.pq_curpage, "data": timeEntryForm };
 	}
 
 	function create( event, rc, prc ) {

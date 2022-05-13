@@ -8,9 +8,9 @@
         <li class="nav-item">
             <a class="nav-link" href="/main/changeLog">Change log</a>
         </li>
-        <!--- <li>
-            <button class="btn btn-success" @click="">+</button>
-        </li> --->
+        <li class="nav-item">
+            <a class="nav-link" href="/main/payrates">Payrates</a>
+        </li>
     </ul>
 
     <div style="height: calc(100vh - 115px);">
@@ -20,13 +20,9 @@
 </div>
 
 <script>
-    <!--- <cfoutput>queryData = #serializeJSON(prc.data)#</cfoutput> --->
-
-    <!--- <cfoutput>timeEntryForm = #serializeJSON(prc.timeEntryForm)#</cfoutput> --->
     <cfoutput>jobcodes = #serializeJSON(prc.jobcodes)#</cfoutput>
     <cfoutput>polyfield = #serializeJSON(prc.polyfield)#</cfoutput>
     <cfoutput>crew = #serializeJSON(prc.crew)#</cfoutput>
-    // console.log(timeEntryForm);
 
     var jobcodesByJobcode = jobcodes.reduce(function(acc,x){
         acc[x.jobcode] = String(x.description);
@@ -48,7 +44,6 @@
         else acc[x.CrewNumber] = String(x.CrewLead);
         return acc;
     },{});
-    // console.table(polyfieldByFieldName);
 
     function numberFormat(val){
         return Math.round(val * 100)/100
@@ -141,10 +136,6 @@
             }
         },
 
-        created: function(){
-           
-        },
-
         data: function() {
 
             this.options = {
@@ -162,6 +153,7 @@
                 resizable: false,
                 postRenderInterval: -1,
                 virtualX: true, virtualY: true,
+                selectionModel: { type: null },
                 
                 filterModel: { on: true, header: true, type: 'remote' },
                 sortModel: { type: 'remote', sorter: [{ dataIndx: 'Date', dir: 'up' }, { dataIndx: 'RECIEPTNO', dir: 'up' }] },
@@ -214,20 +206,17 @@
                     var _self = this;
                     var oldRowData = grid.getRowData({ rowIndx: rowIndx });
 
-                    _self.update(rowIndx, grid);
-
                     grid.addClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
+                    
                     grid.editFirstCellInRow({ rowIndx: rowIndx });
 
                     var tr = grid.getRow({ rowIndx: rowIndx });
                     var btn = tr.find("button.copy_btn");
 
-                    btn.text("Hello")
-                        .unbind("click")
+                    btn.unbind("click")
                         .click(function (evt) {
                             evt.preventDefault();
                             _self.options.update(rowIndx, grid, oldRowData);
-                            console.log("saving!");
                             return false;
                         });
 
@@ -242,9 +231,7 @@
 
                 update: function(rowIndx, grid, oldRowData){
                     var _self = this;
-
-                    // console.log(rowIndx, grid, oldRowData); return;
-                    
+                    return;
                     _self.showLoading();
                     rowData = calculateRow(grid.getRowData({ rowIndx: rowIndx }));
 
@@ -258,8 +245,6 @@
                         newData = rowData;
                         oldData = oldRowData;
                     }
-                    
-                    // console.log(ui.newVal, ui.oldVal, ui.rowData); return;
 
                     $.ajax({
                         url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
@@ -282,7 +267,6 @@
                     rpp: 100, //records per request.
                     init: function () {
                         this.data = [];
-                        console.log("clear data",JSON.parse(JSON.stringify(this.data)), +new Date());
                         this.requestPage = 1;
                         return this.data;
                     }
@@ -325,7 +309,6 @@
                         for (var i = 0; i < len; i++) {
                             pq_data[i + init] = calculateRow(data[i]);
                         }
-                        console.log("Get data", JSON.parse(JSON.stringify(this.options.pqIS.data)), +new Date());
                         return { data: pq_data }
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
@@ -334,10 +317,9 @@
                 },
                     
                 colModel: [
-                    { title: "Edit", editable: false, width: 75, sortable: false,
+                    { title: "Edit", editable: false, width: 110, sortable: false,
                         render: function(ui) {
-                            // console.log(ui.rowIndx);
-                            return "<button class='btn btn-sm btn-outline-primary copy_btn'><i class='bi bi-files'></i></button> <button class='btn btn-sm btn-outline-danger delete_btn'><i class='bi bi-trash3'></i></button>";
+                            return "<button class='btn btn-sm btn-outline-primary copy_btn'><i class='bi bi-files'></i></button> <button class='btn btn-sm btn-outline-danger delete_btn'><i class='bi bi-trash3'></i></button> <button class='btn btn-sm btn-outline-success edit_btn'><i class='bi bi-pencil'></i></button>";
                         },
                         postRender: function(ui) {
                             var _self = this;
@@ -411,6 +393,11 @@
                                     }
                                 });
                             });
+
+                            // Edit button ---------------------------------------
+                            cell.find(".edit_btn").bind("click", function(evt){
+                                _self.options.editRow(ui.rowIndx, _self);
+                            });
                         }
                     },
 
@@ -442,10 +429,7 @@
                         },
                         filter: { condition: 'begin', listeners: [{'change' : function(evt, item){
                             var grid = $(this).closest(".pq-grid");
-                            console.log("returned data", grid.pqGrid("option").pqIS.init(), +new Date());
                             // grid.pqGrid( { dataModel: { data: grid.pqGrid("option").pqIS.data } });
-
-                            console.log("Filter", JSON.parse(JSON.stringify(app.options.pqIS.data)), +new Date());
 
                             grid.pqGrid('filter', {
                                 oper: 'replace',
@@ -467,7 +451,17 @@
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
                     { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "date",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] },
+                        render: function(ui){
+                            var curDate = new Date();
+                            var dataIdxDate = new Date(ui.rowData.Date);
+
+                            if(dataIdxDate > curDate){
+                                return { cls: 'futer_date_error' };
+                            }
+                            return {};
+                        }
+                    },
 
                     { title: "Cost / Acre Actual", width: 100, editable: false, dataIndx: "acresPerHour", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
@@ -514,6 +508,18 @@
 
                     { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "integer",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+
+                    { title: "Leader Payrates", width: 100, dataIndx: "qLeader", dataType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+
+                    { title: "Assistant Payrates", width: 100, dataIndx: "pAssistant", dataType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+
+                    { title: "QC Payrates", width: 100, dataIndx: "pQC", dataType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+
+                    { title: "Field Worker Payrates", width: 100, dataIndx: "pFieldWorker", dataType: "integer",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
                 ],
 
                 editable: function(ui){
@@ -529,3 +535,13 @@
     
 
 </script>
+
+<style>
+    tr.pq-grid-row.pq-row-edit {
+        background: #b2ffbe;
+    }
+
+    td.futer_date_error {
+        background: #ff2f2f3b;
+    }
+</style>
