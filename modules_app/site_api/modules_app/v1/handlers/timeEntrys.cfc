@@ -63,8 +63,6 @@ component extends="BaseHandler"{
 			// .toSQL();
 			.paginate(pq_curpage, rc.pq_rpp);
 
-		// dump(timeEntryForm); abort;
-
 		return {"totalRecords": timeEntryForm.pagination.totalRecords, "curPage": timeEntryForm.pagination.page, "data": timeEntryForm.results };
 	}
 

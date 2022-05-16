@@ -23,6 +23,12 @@
     <cfoutput>jobcodes = #serializeJSON(prc.jobcodes)#</cfoutput>
     <cfoutput>polyfield = #serializeJSON(prc.polyfield)#</cfoutput>
     <cfoutput>crew = #serializeJSON(prc.crew)#</cfoutput>
+    <cfoutput>duplicates = #serializeJSON(prc.duplicateRecords)#</cfoutput>
+
+    var duplicates = duplicates.reduce(function(acc,x){
+        acc[x.RECIEPTNO] = x.numberOfDuplicates;
+        return acc;
+    },{});
 
     var jobcodesByJobcode = jobcodes.reduce(function(acc,x){
         acc[x.jobcode] = String(x.description);
@@ -322,6 +328,14 @@
                         //alert(errorThrown);
                     }
                 },
+
+                rowInit: function(ui){
+                    var _self = this;
+
+                    if( duplicates[ui.rowData.RECIEPTNO] ){
+                        return { cls: "duplicet_record_worning" }
+                    }
+                },
                     
                 colModel: [
                     { title: "Edit", editable: false, width: 110, sortable: false,
@@ -553,5 +567,9 @@
 
     td.futer_date_error {
         background: #ff2f2f3b;
+    }
+
+    tr.duplicet_record_worning {
+        background: #fff2a6c9;
     }
 </style>
