@@ -149,7 +149,7 @@
                     show: false,
                 },
                 columnTemplate: { width: 100 },
-                colModel: this.$options.columns1,
+                // colModel: this.$options.columns1,
                 resizable: false,
                 postRenderInterval: -1,
                 virtualX: true, virtualY: true,
@@ -202,7 +202,7 @@
                     ]
                 },
 
-                editRow: function(rowIndx, grid){
+                editRow: function(rowIndx, grid) {
                     var _self = this;
                     var oldRowData = grid.getRowData({ rowIndx: rowIndx });
 
@@ -212,21 +212,28 @@
 
                     var tr = grid.getRow({ rowIndx: rowIndx });
                     var btn = tr.find("button.copy_btn");
+                    
+                    console.log($._data( $('button.copy_btn')[0], 'events' ).click[0]);
+                    btn.unbind("click");
+                    console.log($._data( $('button.copy_btn')[0], 'events' ).click[0]);
+                    btn.bind("click", function(evt) {
+                        console.log(evt);
+                    });
+                    console.log($._data( $('button.copy_btn')[0], 'events' ).click[0]);
+                    // btn.unbind("click")
+                    //     .click(function (evt) {
+                    //         evt.preventDefault();
+                    //         _self.options.update(rowIndx, grid, oldRowData);
+                    //         return false;
+                    //     });
 
-                    btn.unbind("click")
-                        .click(function (evt) {
-                            evt.preventDefault();
-                            _self.options.update(rowIndx, grid, oldRowData);
-                            return false;
-                        });
-
-                    btn.next().button("option", { label: "cancel", icons: {primary: "ui-icon-cancel"} })
-                        .unbind("click")
-                        .click(function (evt) {
-                            grid.quitEditMode();
-                            grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
-                            grid.rollback();
-                        });
+                    // btn.next().button("option", { label: "cancel", icons: {primary: "ui-icon-cancel"} })
+                    //     .unbind("click")
+                    //     .click(function (evt) {
+                    //         grid.quitEditMode();
+                    //         grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
+                    //         grid.rollback();
+                    //     });
                 },
 
                 update: function(rowIndx, grid, oldRowData){
@@ -322,6 +329,7 @@
                             return "<button class='btn btn-sm btn-outline-primary copy_btn'><i class='bi bi-files'></i></button> <button class='btn btn-sm btn-outline-danger delete_btn'><i class='bi bi-trash3'></i></button> <button class='btn btn-sm btn-outline-success edit_btn'><i class='bi bi-pencil'></i></button>";
                         },
                         postRender: function(ui) {
+                            console.log("post render");
                             var _self = this;
                             var cell = _self.getCell(ui);
                             
@@ -396,7 +404,9 @@
 
                             // Edit button ---------------------------------------
                             cell.find(".edit_btn").bind("click", function(evt){
-                                _self.options.editRow(ui.rowIndx, _self);
+                                if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length) {
+                                    _self.options.editRow(ui.rowIndx, _self);
+                                }
                             });
                         }
                     },
@@ -509,7 +519,7 @@
                     { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "integer",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Leader Payrates", width: 100, dataIndx: "qLeader", dataType: "integer",
+                    { title: "Leader Payrates", width: 100, dataIndx: "pLeader", dataType: "integer",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
                     { title: "Assistant Payrates", width: 100, dataIndx: "pAssistant", dataType: "integer",
