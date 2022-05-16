@@ -209,6 +209,7 @@
                 },
 
                 editRow: function(rowIndx, grid) {
+                    console.log(rowIndx, 'editing row')
                     var _self = this;
                     var oldRowData = grid.getRowData({ rowIndx: rowIndx });
 
@@ -217,33 +218,33 @@
                     grid.editFirstCellInRow({ rowIndx: rowIndx });
 
                     var tr = grid.getRow({ rowIndx: rowIndx });
-                    var btn = tr.find("button.copy_btn");
-                    
-                    console.log($._data( $('button.copy_btn')[0], 'events' ).click[0]);
-                    btn.unbind("click");
-                    console.log($._data( $('button.copy_btn')[0], 'events' ).click[0]);
-                    btn.bind("click", function(evt) {
-                        console.log(evt);
-                    });
-                    console.log($._data( $('button.copy_btn')[0], 'events' ).click[0]);
-                    // btn.unbind("click")
-                    //     .click(function (evt) {
-                    //         evt.preventDefault();
-                    //         _self.options.update(rowIndx, grid, oldRowData);
-                    //         return false;
-                    //     });
-
-                    // btn.next().button("option", { label: "cancel", icons: {primary: "ui-icon-cancel"} })
-                    //     .unbind("click")
-                    //     .click(function (evt) {
-                    //         grid.quitEditMode();
-                    //         grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
-                    //         grid.rollback();
-                    //     });
+                    tr.find("button.copy_btn").remove();
+                    var deletebtn = tr.find("button.delete_btn");
+                    deletebtn.text('Cancel')
+                            .unbind("click")
+                            .click(function (evt) {
+                                console.log('cancel')
+                                grid.quitEditMode();
+                                grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
+                                grid.rollback();
+                            });
+                            
+                            var editbtn = tr.find("button.edit_btn");
+                            editbtn.text('Save')
+                            .unbind("click")
+                            .click(function (evt) {
+                                console.log('save')
+                                grid.options.update(rowIndx, grid, oldRowData);
+                                return false;
+                            });
                 },
 
                 update: function(rowIndx, grid, oldRowData){
                     var _self = this;
+                    if (grid.saveEditCell() == false) {
+                        return false;
+                    }
+                    
                     return;
                     _self.showLoading();
                     rowData = calculateRow(grid.getRowData({ rowIndx: rowIndx }));
@@ -328,7 +329,6 @@
                         //alert(errorThrown);
                     }
                 },
-
                 rowInit: function(ui){
                     var _self = this;
 
@@ -336,9 +336,10 @@
                         return { cls: "duplicet_record_worning" }
                     }
                 },
-                    
+                editModel: { clicksToEdit: 2, saveKey: $.ui.keyCode.ENTER, onBlur:''  },
+                freezeCols:1,
                 colModel: [
-                    { title: "Edit", editable: false, width: 110, sortable: false,
+                    { title: "Edit", editable: false, width: 120, sortable: false,
                         render: function(ui) {
                             return "<button class='btn btn-sm btn-outline-primary copy_btn'><i class='bi bi-files'></i></button> <button class='btn btn-sm btn-outline-danger delete_btn'><i class='bi bi-trash3'></i></button> <button class='btn btn-sm btn-outline-success edit_btn'><i class='bi bi-pencil'></i></button>";
                         },
@@ -514,7 +515,7 @@
                     {title: 'Employee Hours', width:100, dataIndx: "employeeHours", editable: false, dateType: "integer",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Total Cost", width: 100, dataIndx: "total", editable: false, editable: false, dateType: "float",
+                    { title: "Total Cost", width: 100, dataIndx: "total", editable: false, dateType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Jobcode", width: 200, dataIndx: "jobcode_info", dateType: "string",
