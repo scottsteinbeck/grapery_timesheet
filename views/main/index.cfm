@@ -209,9 +209,8 @@
                 },
 
                 editRow: function(rowIndx, grid) {
-                    console.log(rowIndx, 'editing row')
                     var _self = this;
-                    var oldRowData = grid.getRowData({ rowIndx: rowIndx });
+                    var oldRowData = Object.assign({}, grid.getRowData({ rowIndx: rowIndx }));
 
                     grid.addClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
                     
@@ -223,7 +222,6 @@
                     deletebtn.text('Cancel')
                             .unbind("click")
                             .click(function (evt) {
-                                console.log('cancel')
                                 grid.quitEditMode();
                                 grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
                                 grid.rollback();
@@ -233,44 +231,31 @@
                             editbtn.text('Save')
                             .unbind("click")
                             .click(function (evt) {
-                                console.log('save')
                                 grid.options.update(rowIndx, grid, oldRowData);
                                 return false;
                             });
                 },
 
                 update: function(rowIndx, grid, oldRowData){
-                    var _self = this;
+
                     if (grid.saveEditCell() == false) {
                         return false;
                     }
                     
-                    return;
-                    _self.showLoading();
+                    grid.showLoading();
                     rowData = calculateRow(grid.getRowData({ rowIndx: rowIndx }));
-
-                    var newData = {};
-                    var oldData = {};
-                    if(typeof ui.newVal != "object") {
-                        newData[ui.column.dataIndx] = rowData;
-                        oldData[ui.column.dataIndx] = oldRowData;
-                    }
-                    else {
-                        newData = rowData;
-                        oldData = oldRowData;
-                    }
+                    console.log(rowData);
 
                     $.ajax({
-                        url: "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX,
+                        url: "/api/v1/timeEntrys/" + rowData.Time_Entry_Form_ROW_INDEX,
                         method: "PUT",
-                        data: { rowData: JSON.stringify(ui.rowData),
-                            newRowData: JSON.stringify(newData), 
-                            oldRowData: JSON.stringify(oldData) }
+                        data: { newRowData: JSON.stringify(rowData), 
+                            oldRowData: JSON.stringify(oldRowData) }
                     }).done(function(){
-                        _self.hideLoading();
+                        grid.hideLoading();
                     });
 
-                    this.refreshRow(ui);
+                    // this.refreshRow(ui);
                 },
 
                 pqIS: {
@@ -344,7 +329,6 @@
                             return "<button class='btn btn-sm btn-outline-primary copy_btn'><i class='bi bi-files'></i></button> <button class='btn btn-sm btn-outline-danger delete_btn'><i class='bi bi-trash3'></i></button> <button class='btn btn-sm btn-outline-success edit_btn'><i class='bi bi-pencil'></i></button>";
                         },
                         postRender: function(ui) {
-                            console.log("post render");
                             var _self = this;
                             var cell = _self.getCell(ui);
                             
@@ -571,6 +555,6 @@
     }
 
     tr.duplicet_record_worning {
-        background: #fff2a6c9;
+        background: #fff5ba;
     }
 </style>

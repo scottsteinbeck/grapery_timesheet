@@ -1,5 +1,7 @@
 component extends="coldbox.system.EventHandler" {
 
+	property name="JSONDiff" inject="JSONDiff";
+
 	function payrates(event, rc, prc) {
 		prc.payrateData = queryExecute("
 			SELECT *

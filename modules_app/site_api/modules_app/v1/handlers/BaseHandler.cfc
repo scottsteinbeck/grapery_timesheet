@@ -7,8 +7,7 @@ component extends="coldbox.system.RestHandler" {
 			"TotalCalculatedTime",
 			"Time_Entry_Form_ROW_INDEX",
 			"RECIEPTNO",
-			"TimeDiff", "TimeDiff2nd", "TimeDiff3rd",
-            "pSeason", "pLeader", "pAssistant", "pQC", "pFieldWorker"
+			"TimeDiff", "TimeDiff2nd", "TimeDiff3rd"
         ]
     }
 }

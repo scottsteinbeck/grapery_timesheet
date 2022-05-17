@@ -8,11 +8,14 @@ component extends="BaseHandler"{
 	};
 
 	property name = "qb" inject = 'QueryBuilder@qb';
+	property name = "JSONDiff" inject = "JSONDiff";
 
 	function index( event, rc, prc ) {
 		// if(rc.keyExists("pq_filter")) {dump(rc.pq_filter); abort;}
 
 		selectItems = arrayMerge(getQueryColNames(), [
+            "pSeason", "pLeader", "pAssistant", "pQC", "pFieldWorker",
+
 			"(vine_count / field_acres1) AS vines_per_acre",
 
 			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) AS total",
@@ -109,37 +112,33 @@ component extends="BaseHandler"{
 
 	function update( event, rc, prc ) {
 
-		rowData = deserializeJSON(rc.rowData);
-		// dump(rc.newRowData); dump(rc.oldRowData); abort;
-
 		var newRowDataObj = deserializeJSON(rc.newRowData);
+		var oldRowDataObj = deserializeJSON(rc.oldRowData);
+		var updatedRowDataObj = JSONDiff.diff(oldRowDataObj, newRowDataObj, ['pq_rowcls']);
+		// dump(rc.newRowData); abort;
 
-		if(!isNull(rc.newRowData) && rc.newRowData != "{}" && rc.newRowData != rc.oldRowData
-			&& !(newRowDataObj.keyExists("crew_info") && !newRowDataObj.keyExists("Crew"))) {
+		queryExecute("
+			UPDATE TIME_ENTRY_FORM_V2
+			SET Crew = :crew, FieldCode = :fieldCode, JobCode = :jobCode
+			WHERE Time_Entry_Form_ROW_INDEX = :rowIndex
+		",{
+			rowIndex = { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" },
+			crew = { value = newRowDataObj?.Crew, cfsqltype="cf_sql_varchar" },
+			fieldCode = { value = newRowDataObj.FieldCode, cfsqltype="cf_sql_varchar" },
+			jobCode = { value = newRowDataObj.JobCode, cfsqltype="cf_sql_varchar" }
+		});
 
-			queryExecute("
-				UPDATE TIME_ENTRY_FORM_V2
-				SET Crew = :crew, FieldCode = :fieldCode, JobCode = :jobCode
-				WHERE Time_Entry_Form_ROW_INDEX = :rowIndex
-			",{
-				rowIndex = { value = rowData.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" },
-				crew = { value = rowData.Crew, cfsqltype="cf_sql_varchar" },
-				fieldCode = { value = rowData.FieldCode, cfsqltype="cf_sql_varchar" },
-				jobCode = { value = rowData.JobCode, cfsqltype="cf_sql_varchar" }
-			});
-	
-			queryExecute("
-				INSERT INTO change_log(clTEFID, clNewRowData, clOldRowData, clAction, clReciept, clUserID, clDate)
-				VALUES (:tefID, :newRowData, :oldRowData, 'edit', :reciept, :userID, :currentDate)
-			",{
-				reciept = { value = rowData.RECIEPTNO, cfsqltype = "cf_sql_varchar" },
-				newRowData = { value = rc.newRowData, cfsqltype = "cf_sql_varchar" },
-				oldRowData = { value = rc.oldRowData, cfsqltype = "cf_sql_varchar" },
-				tefID = { value = deserializeJSON(rc.id), cfsqltype = "cf_sql_integer" },
-				userID = { value = 1, cfsqltype="cf_sql_integer"},
-				currentDate = { value = now(), cfsqltype="cf_sql_date"}
-			});
-		}
+		queryExecute("
+			INSERT INTO change_log(clTEFID, clChanges, clOldRowData, clAction, clReciept, clUserID, clDate)
+			VALUES (:tefID, :changes, :oldRowData, 'edit', :reciept, :userID, :currentDate)
+		",{
+			reciept = { value = newRowDataObj.RECIEPTNO, cfsqltype = "cf_sql_varchar" },
+			changes = { value = serializeJSON(updatedRowDataObj), cfsqltype = "cf_sql_varchar" },
+			oldRowData = { value = rc.oldRowData, cfsqltype = "cf_sql_varchar" },
+			tefID = { value = deserializeJSON(rc.id), cfsqltype = "cf_sql_integer" },
+			userID = { value = 1, cfsqltype="cf_sql_integer"},
+			currentDate = { value = now(), cfsqltype="cf_sql_date"}
+		});
     }
 
 	function delete( event, rc, prc ) {

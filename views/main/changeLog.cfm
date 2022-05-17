@@ -26,8 +26,11 @@
                 <td>{{logData.clAction}}</td>
                 <td>{{logData.clReciept}}</td>
                 <td>
-                    <div v-if="logData.clAction == 'edit'" v-for="(change, key) in logData.clNewRowData">
-                        {{key}}: &nbsp;{{logData.clOldRowData[key]}} &nbsp; <i class="bi bi-arrow-right"></i> &nbsp; {{change}}
+                    <div v-if="logData.clAction == 'edit'" v-for="change in logData.clChanges">
+                        {{change.path[0]}}: &nbsp; 
+                        <template v-if="change.old == ''">Nothing</template>{{change.old}} &nbsp; 
+                        <i class="bi bi-arrow-right"></i> &nbsp; 
+                        {{change.new}}
                     </div>
                 </td>
                 <td>
@@ -49,7 +52,7 @@
     <cfoutput>changeLogData = #serializeJSON(prc.changeLogData)#</cfoutput>
 
     changeLogData.map(function(x){
-        if(x.clNewRowData != "") x.clNewRowData = JSON.parse(x.clNewRowData);
+        if(x.clChanges != "") x.clChanges = JSON.parse(x.clChanges);
         if(x.clOldRowData != "") x.clOldRowData = JSON.parse(x.clOldRowData);
         return x;
     });

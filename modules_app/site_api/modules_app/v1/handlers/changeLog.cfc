@@ -18,20 +18,27 @@ component extends="BaseHandler"{
         if(rc.clAction == "edit"){
             var revertItems = deserializeJSON(rc.clOldData)
             var setItems = "";
+
+            var params = {
+                timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer" }
+            }
     
             for(col in getQueryColNames()){
                 if(revertItems.keyExists(col)){
-                    setItems = col & '=' & revertItems[col];
+                    if(revertItems[col] != ""){
+                        setItems = setItems & col & ' = :' & col & ', ';
+                        params[col] = { value = revertItems[col] };
+                    }
                 }
             }
     
+            // dump(Left(setItems, len(setItems)-2)); abort;
+
             queryExecute("
                 UPDATE TIME_ENTRY_FORM_V2
-                SET " & setItems & "
+                SET " & Left(setItems, len(setItems)-2) & "
                 WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormIndex
-            ",{
-                timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer" }
-            });
+            ", params);
         }
         else if(rc.clAction == "copy"){
             queryExecute("
