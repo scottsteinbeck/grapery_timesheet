@@ -14,7 +14,7 @@ component extends="BaseHandler"{
     }
 
 	function update( event, rc, prc ) {
-        dump("update"); abort;
+        dump(rc); abort;
     }
 
 	function delete( event, rc, prc ) {

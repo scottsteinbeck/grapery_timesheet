@@ -10,4 +10,12 @@ component extends="coldbox.system.RestHandler" {
 			"TimeDiff", "TimeDiff2nd", "TimeDiff3rd"
         ]
     }
+
+	function getPolyfieldColNames(){
+		return [
+			"Variety_name",
+			"field_acres1",
+			"vine_count"
+		]
+	}
 }

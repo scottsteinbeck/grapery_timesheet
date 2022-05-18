@@ -65,10 +65,10 @@
 
         rowData.crew_info = crewByOid[rowData.Crew];
 
-        if(rowData.Date != ""){
-            var date = new Date(rowData.Date);
-            rowData.Date = ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1))) + '/' + ((date.getDate() > 9) ? date.getDate() : ('0' + date.getDate())) + '/' + date.getFullYear();
-        }
+        // if(rowData.Date != ""){
+        //     var date = new Date(rowData.Date);
+        //     rowData.Date = ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1))) + '/' + ((date.getDate() > 9) ? date.getDate() : ('0' + date.getDate())) + '/' + date.getFullYear();
+        // }
 
         rowData.vines_per_acre = 0;
         if( !isNaN(rowData.vine_count) && !isNaN(parseFloat(rowData.field_acres1))){
@@ -203,6 +203,8 @@
                                 };
                                 var rowIndx = _self.addRow({ rowIndxPage: 0, rowData: rowData, checkEditable: false, rowIndx: 0 });
                                 _self.options.editRow(rowIndx, this);
+                                this.options.colModel[1].editable = true;
+                                // this.options.colModel[1].cls = 'editable';
                             }
                         }
                     ]
@@ -211,7 +213,7 @@
                 editRow: function(rowIndx, grid) {
                     var _self = this;
                     var oldRowData = Object.assign({}, grid.getRowData({ rowIndx: rowIndx }));
-
+                    
                     grid.addClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
                     
                     grid.editFirstCellInRow({ rowIndx: rowIndx });
@@ -220,20 +222,23 @@
                     tr.find("button.copy_btn").remove();
                     var deletebtn = tr.find("button.delete_btn");
                     deletebtn.text('Cancel')
-                            .unbind("click")
-                            .click(function (evt) {
-                                grid.quitEditMode();
-                                grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
-                                grid.rollback();
-                            });
-                            
-                            var editbtn = tr.find("button.edit_btn");
-                            editbtn.text('Save')
-                            .unbind("click")
-                            .click(function (evt) {
-                                grid.options.update(rowIndx, grid, oldRowData);
-                                return false;
-                            });
+                        .unbind("click")
+                        .click(function (evt) {
+                            grid.quitEditMode();
+                            grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
+                            grid.rollback();
+                        });
+                        
+                        var editbtn = tr.find("button.edit_btn");
+                        editbtn.text('Save')
+                        .unbind("click")
+                        .click(function (evt) {
+                            grid.options.update(rowIndx, grid, oldRowData);
+                            grid.quitEditMode();
+                            grid.removeClass( {rowIndx: rowIndx, cls: 'pq-row-edit'} );
+                            grid.rollback();
+                            return false;
+                        });
                 },
 
                 update: function(rowIndx, grid, oldRowData){
@@ -244,16 +249,27 @@
                     
                     grid.showLoading();
                     rowData = calculateRow(grid.getRowData({ rowIndx: rowIndx }));
-                    console.log(rowData);
 
-                    $.ajax({
-                        url: "/api/v1/timeEntrys/" + rowData.Time_Entry_Form_ROW_INDEX,
-                        method: "PUT",
+                    if(rowData["Time_Entry_Form_ROW_INDEX"] == undefined){
+                        $.ajax({
+                        url: "/api/v1/timeEntrys",
+                        method: "POST",
                         data: { newRowData: JSON.stringify(rowData), 
                             oldRowData: JSON.stringify(oldRowData) }
-                    }).done(function(){
-                        grid.hideLoading();
-                    });
+                        }).done(function(){
+                            grid.hideLoading();
+                        });
+                    }
+                    else{
+                        $.ajax({
+                            url: "/api/v1/timeEntrys/" + rowData.Time_Entry_Form_ROW_INDEX,
+                            method: "PUT",
+                            data: { newRowData: JSON.stringify(rowData), 
+                                oldRowData: JSON.stringify(oldRowData) }
+                        }).done(function(){
+                            grid.hideLoading();
+                        });
+                    }
 
                     // this.refreshRow(ui);
                 },
@@ -314,6 +330,7 @@
                         //alert(errorThrown);
                     }
                 },
+
                 rowInit: function(ui){
                     var _self = this;
 
@@ -321,8 +338,9 @@
                         return { cls: "duplicet_record_worning" }
                     }
                 },
-                editModel: { clicksToEdit: 2, saveKey: $.ui.keyCode.ENTER, onBlur:''  },
-                freezeCols:1,
+
+                editModel: { clicksToEdit: 1, onTab: 'nextEdit', onBlur: '', saveKey: null, },
+                freezeCols: 1,
                 colModel: [
                     { title: "Edit", editable: false, width: 120, sortable: false,
                         render: function(ui) {
@@ -413,7 +431,7 @@
                     { title: "Reciept Number", width: 100, editable: false, dataIndx: "RECIEPTNO", datatype: "string",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Crew", dataIndx: "crew_info", width: 250, dataType: "string",
+                    { title: "Crew", dataIndx: "crew_info", width: 250, dataType: "string", cls: 'editable',
                         editor: {
                             type: 'select',
                             valueIndx: "CrewNumber",
@@ -429,7 +447,7 @@
                     { title:'Field Vines per Acre', width:150, editable: false, dataIndx: "vines_per_acre", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string",
+                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", cls: 'editable',
                         editor: {
                             type: 'select',
                             valueIndx: "field_name",
@@ -450,16 +468,16 @@
                     { title: "Total Acres", width: 100, editable: false, dataIndx: "field_acres1", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string",
+                    { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string", cls: 'editable',
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Field Total Vines", width: 100, editable: false, dataIndx: "vine_count", dataType: "integer",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Operation Name", width: 130, dataIndx: "description", dataType: "string",
+                    { title: "Operation Name", width: 130, dataIndx: "description", dataType: "string", cls: 'editable',
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
-                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "date",
+                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "date", cls: 'editable', format: "mm/dd/yy",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] },
                         render: function(ui){
                             var curDate = new Date();
@@ -478,22 +496,22 @@
                     { title: "Man Hr / Acre Actual", width: 100, editable: false, dataIndx: "employeeAcresPerHr", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float",
+                    { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float", cls: 'editable',
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Total Vines", width: 100, dataIndx: "Totalvines", dateType: "integer",
+                    { title: "Total Vines", width: 100, dataIndx: "Totalvines", dateType: "integer", cls: 'editable',
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Acres", width: 100, editable: false, dataIndx: "vineacres", dateType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string",
+                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string", cls: 'editable',
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }}, 
 
-                    {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd", dataType: "string",
+                    {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd", dataType: "string", cls: 'editable',
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                     
-                    { title: "QC_Hours", width: 100, dataIndx: "QC_Hours", dateType: "float",
+                    { title: "QC_Hours", width: 100, dataIndx: "QC_Hours", dateType: "float", cls: 'editable',
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
                     {title: 'Employee Hours', width:100, dataIndx: "employeeHours", editable: false, dateType: "integer",
@@ -502,7 +520,7 @@
                     { title: "Total Cost", width: 100, dataIndx: "total", editable: false, dateType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Jobcode", width: 200, dataIndx: "jobcode_info", dateType: "string",
+                    { title: "Jobcode", width: 200, dataIndx: "jobcode_info", dateType: "string", cls: 'editable',
                         editor: {
                             type: 'select',
                             valueIndx: "jobcode",
@@ -515,19 +533,19 @@
 
                     { dataIndx: "JobCode", hidden: true, dateType: "integer" },
 
-                    { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "integer",
+                    { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Leader Payrates", width: 100, dataIndx: "pLeader", dataType: "integer",
+                    { title: "Leader Payrates", width: 100, dataIndx: "pLeader", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Assistant Payrates", width: 100, dataIndx: "pAssistant", dataType: "integer",
+                    { title: "Assistant Payrates", width: 100, dataIndx: "pAssistant", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "QC Payrates", width: 100, dataIndx: "pQC", dataType: "integer",
+                    { title: "QC Payrates", width: 100, dataIndx: "pQC", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Field Worker Payrates", width: 100, dataIndx: "pFieldWorker", dataType: "integer",
+                    { title: "Field Worker Payrates", width: 100, dataIndx: "pFieldWorker", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
                 ],
 
@@ -548,6 +566,11 @@
 <style>
     tr.pq-grid-row.pq-row-edit {
         background: #b2ffbe;
+    }
+
+    tr.pq-grid-row.pq-row-edit td.editable {
+        font-weight: bolder;
+        background: #92f1a1;
     }
 
     td.futer_date_error {

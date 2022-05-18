@@ -15,6 +15,10 @@ component extends="BaseHandler"{
 
 		selectItems = arrayMerge(getQueryColNames(), [
             "pSeason", "pLeader", "pAssistant", "pQC", "pFieldWorker",
+			
+			"vine_count",
+			"Variety_name",
+			"description",
 
 			"(vine_count / field_acres1) AS vines_per_acre",
 
@@ -66,6 +70,8 @@ component extends="BaseHandler"{
 			// .toSQL();
 			.paginate(pq_curpage, rc.pq_rpp);
 
+			// dump(timeEntryForm); abort;
+
 		return {"totalRecords": timeEntryForm.pagination.totalRecords, "curPage": timeEntryForm.pagination.page, "data": timeEntryForm.results };
 	}
 
@@ -108,25 +114,74 @@ component extends="BaseHandler"{
 
 			return newRecieptName;
 		}
+		else{
+
+			// dump(rc); abort;
+
+			var colNamesToQry = [];
+			var newRowData = deserializeJSON(rc.newRowData);
+			var newRowsToQry = {};
+			var newRowsList = [];
+
+			var index = 0;
+			for(data in newRowData){
+				if(getQueryColNames().find(data) && !isNull(newRowData[data]) && newRowData[data] != "" && newRowData[data] != "0"){
+					index++;
+					newRowsToQry[data] = { value = newRowData[data] };
+					newRowsList[index] = newRowData[data];
+					colNamesToQry[index] = data;
+					dump(colNamesToQry[index]);
+				}
+			}
+
+			queryExecute("
+				INSERT INTO TIME_ENTRY_FORM_V2 (" & arrayToList(colNamesToQry, ',') & ")
+				VALUES (" & arrayToList(newRowsList, ',') & ")
+			",newRowsToQry);
+		}
     }
+
+	function getQryInfo(colNams, newRowData, whereItem){
+		var updateQry = [];
+		var updateDataQry = {whereItem: whereItem};
+
+		var index = 0;
+		for(col in colNams){
+			if(newRowData.keyExists(col)){
+				index++;
+				updateQry[index] = col & " = :" & col;
+				updateDataQry[col] = { value = newRowData[col]};
+			}
+		}
+
+		return {string: arrayToList(updateQry, ','), data: updateDataQry}
+	}
 
 	function update( event, rc, prc ) {
 
 		var newRowDataObj = deserializeJSON(rc.newRowData);
 		var oldRowDataObj = deserializeJSON(rc.oldRowData);
 		var updatedRowDataObj = JSONDiff.diff(oldRowDataObj, newRowDataObj, ['pq_rowcls']);
+
+		var updateQry = [];
+		var updateDataQry = {rowIndex = { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" }};
 		// dump(rc.newRowData); abort;
 
+		// TIME_ENTRY_FORM_V2
+		var queryInfo = getQryInfo(getQueryColNames(), newRowDataObj, { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" });
 		queryExecute("
 			UPDATE TIME_ENTRY_FORM_V2
-			SET Crew = :crew, FieldCode = :fieldCode, JobCode = :jobCode
-			WHERE Time_Entry_Form_ROW_INDEX = :rowIndex
-		",{
-			rowIndex = { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" },
-			crew = { value = newRowDataObj?.Crew, cfsqltype="cf_sql_varchar" },
-			fieldCode = { value = newRowDataObj.FieldCode, cfsqltype="cf_sql_varchar" },
-			jobCode = { value = newRowDataObj.JobCode, cfsqltype="cf_sql_varchar" }
-		});
+			SET " & queryInfo.string & "
+			WHERE Time_Entry_Form_ROW_INDEX = :whereItem
+		", queryInfo.data);
+
+		// POLYFIELD
+		queryInfo = getQryInfo(getPolyfieldColNames(), newRowDataObj, { value = newRowDataObj.FieldCode, cfsqltype = "cf_sql_varchar"});
+		queryExecute("
+			UPDATE POLYFIELD
+			SET " & queryInfo.string & "
+			WHERE field_name = :whereItem
+		", queryInfo.data);
 
 		queryExecute("
 			INSERT INTO change_log(clTEFID, clChanges, clOldRowData, clAction, clReciept, clUserID, clDate)

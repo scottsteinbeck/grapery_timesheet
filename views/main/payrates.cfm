@@ -39,15 +39,15 @@
             }
         },
         template: '<div :options="options"></div>'
-        });
+    });
 
     var app = new Vue({
         el: '#app',
         data1: payrateData,
         methods: {
             onExport: function() {
-            debugger;
-            this.$refs.grid.export();
+                debugger;
+                this.$refs.grid.export();
             }
         },
         data: function() {
@@ -99,48 +99,18 @@
                     ]
                 },
 
-                editRow: function(rowIndx, grid) {
-                    var _self = this;
-                    var oldRowData = grid.getRowData({ rowIndx: rowIndx });
+                cellSave: function(evt, ui){
+                    // console.log(ui.rowData);
 
-                    grid.addClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
-                    
-                    grid.editFirstCellInRow({ rowIndx: rowIndx });
-
-                    var tr = grid.getRow({ rowIndx: rowIndx });
-                    var btn = tr.find("button.copy_btn");
-
-                    btn.unbind("click")
-                        .click(function (evt) {
-                            evt.preventDefault();
-                            _self.options.update(rowIndx, grid, oldRowData);
-                            return false;
-                        });
-
-                    btn.next().button("option", { label: "cancel", icons: {primary: "ui-icon-cancel"} })
-                        .unbind("click")
-                        .click(function (evt) {
-                            grid.quitEditMode();
-                            grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
-                            grid.rollback();
-                        });
+                    $.ajax({
+                        url: "/api/v1/payrates/" + ui.rowData.pSeason,
+                        method: "PUT",
+                        data: {updatedVal: ui.value}
+                    });
                 },
 
                 colModel: [
-                    { title: 'edit', width: 40, editable: false, sortable: false,
-                        render: function(ui) {
-                            return "<button class='btn btn-sm btn-outline-success edit_btn'><i class='bi bi-pencil'></i></button>";
-                        },
-                        postRender: function(ui) {
-                            var _self = this;
-                            var cell = _self.getCell(ui);
-
-                            cell.find(".edit_btn").bind("click", function(evt){
-                                    _self.options.editRow(ui.rowIndx, _self);
-                                });
-                        }
-                    },
-                    { title: 'Season', width: 100, dataType: 'date', dataIndx: 'pSeason', format: "yy-mm-dd" },
+                    { title: 'Season', width: 100, dataType: 'integer', dataIndx: 'pSeason' },
                     { title: 'Leader', width: 200, dataType: 'float', dataIndx: 'pLeader' },
                     { title: 'Assistant', width: 200, dataType: 'float', dataIndx: 'pAssistant' },
                     { title: 'QC', width: 200, dataType: 'float', dataIndx: 'pQC' },
