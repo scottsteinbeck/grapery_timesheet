@@ -26,6 +26,7 @@ component extends="coldbox.system.EventHandler" {
 		prc.changeLogData = queryExecute("
 			SELECT *
 			FROM change_log
+			LEFT JOIN TIME_ENTRY_FORM_V2 ON clTEFID = Time_Entry_Form_ROW_INDEX AND clReciept = RECIEPTNO AND clAction = 'add'
 			WHERE clDate > :showToDate
 		",
 		{
@@ -40,22 +41,6 @@ component extends="coldbox.system.EventHandler" {
 	function index( event, rc, prc ) {
 		prc.welcomeMessage = "Welcome to ColdBox!";
 		event.setView( "main/index" );
-	
-		// prc.timeEntryForm = queryExecute("
-		// 	SELECT 
-		// 	TIME_ENTRY_FORM_V2.BlockID,
-		// 	TIME_ENTRY_FORM_V2.Crew,
-		// 	TIME_ENTRY_FORM_V2.FieldCode, TIME_ENTRY_FORM_V2.JobCode, TIME_ENTRY_FORM_V2.Date,
-		// 	TIME_ENTRY_FORM_V2.QC_Average, TIME_ENTRY_FORM_V2.Totalvines, TIME_ENTRY_FORM_V2.QC_Hours,
-		// 	TIME_ENTRY_FORM_V2.TotalCalculatedTime,
-		// 	Time_Entry_Form_ROW_INDEX,
-		// 	TIME_ENTRY_FORM_V2.RECIEPTNO,
-		// 	TIME_ENTRY_FORM_V2.TimeDiff, TIME_ENTRY_FORM_V2.TimeDiff2nd, TIME_ENTRY_FORM_V2.TimeDiff3rd
-		// 	FROM TIME_ENTRY_FORM_V2
-		// 	WHERE TIME_ENTRY_FORM_V2.jobcode != 'NULL' AND TIME_ENTRY_FORM_V2.deleteDate IS NULL
-		// 	ORDER BY TIME_ENTRY_FORM_V2.Date, TIME_ENTRY_FORM_V2.RECIEPTNO
-		// 	LIMIT 100
-		// ",{},{ returnType = 'array'});
 
 		prc.jobcodes = queryExecute("
 			SELECT JOBCODES.description, JOBCODES.jobcode

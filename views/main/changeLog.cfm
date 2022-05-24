@@ -24,7 +24,9 @@
         <tbody>
             <tr v-for="logData in changeLogData" :class="{'table-secondary': logData.clRestoreDate}">
                 <td>{{logData.clAction}}</td>
+
                 <td>{{logData.clReciept}}</td>
+
                 <td>
                     <div v-if="logData.clAction == 'edit'" v-for="change in logData.clChanges">
                         {{change.path[0]}}: &nbsp; 
@@ -32,7 +34,16 @@
                         <i class="bi bi-arrow-right"></i> &nbsp; 
                         {{change.new}}
                     </div>
+
+                    <div v-if="logData.clAction == 'add'">
+                        <span v-for="col in timeEntryFormColNms">
+                            <template v-if="logData[col]">
+                                {{col}} = {{logData[col]}}, &nbsp;
+                            </template>
+                        </span>
+                    </div>
                 </td>
+
                 <td>
                     <div v-if="!logData.clRestoreDate">
                         <button class="btn btn-primary" @click="undo(logData.clOldRowData, logData.clTEFID, logData.clAction, logData.clID)"><i class="bi bi-arrow-counterclockwise"></i></button>
@@ -62,6 +73,15 @@
 
         data: {
             changeLogData: changeLogData,
+
+            timeEntryFormColNms: [
+                    "BlockID", "Crew",
+                    "FieldCode", "TIME_ENTRY_FORM_V2.JobCode", "Date",
+                    "QC_Average", "Totalvines", "QC_Hours",
+                    "TotalCalculatedTime",
+                    "RECIEPTNO",
+                    "TimeDiff", "TimeDiff2nd", "TimeDiff3rd"
+                ],
         },
 
         methods: {

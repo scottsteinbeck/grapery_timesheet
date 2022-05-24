@@ -189,6 +189,7 @@
                                     });
                                     _self.refreshRow({ rowIndx: rowIndx });
 
+                                    var date = new Date();
                                     var rowData = {
                                         RECIEPTNO: "",
                                         crew_info: "",
@@ -199,7 +200,7 @@
                                         Variety_name: "",
                                         vine_count: 0,
                                         description: "",
-                                        Date: new Date(),
+                                        Date: ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1))) + '/' + ((date.getDate() > 9) ? date.getDate() : ('0' + date.getDate())) + '/' + date.getFullYear(),
                                         acresPerHour: 0,
                                         employeeAcresPerHr: 0,
                                         QC_Average: 0,

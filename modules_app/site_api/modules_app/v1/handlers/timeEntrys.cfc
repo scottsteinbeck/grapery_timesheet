@@ -94,7 +94,7 @@ component extends="BaseHandler"{
 
 			// dump(numberOfCopys); abort;
 
-			newRecieptName = rc.copyReciept & "_" & numberOfCopys.copys[1] + 1;
+			var newRecieptName = rc.copyReciept & "_" & numberOfCopys.copys[1] + 1;
 
 			queryExecute("
 				INSERT INTO TIME_ENTRY_FORM_V2(Time_Entry_Form_ROW_INDEX, Date, JobCode, Crew, JobDescription, ContractorID, Contractor, FieldCode, Name, `In`, `Out`, ID, FirstName, LastName, ID1, Name1, In1, Out1, FirstName1, LastName1, ID2, Name2, In2, Out2, FirstName2, LastName2, Totalunits, Totalvines, StartTime, fulllunchstart, fulllunchstop, Stoptime, VerificationType, RECIEPTNO, QC_Name, QC_Hours, Unitcheck, Verification, ROW_INDEX, TotalCalculatedTime, TotalActualTime, ACTUALMINUTES, AdditionalCrewActual, QC_Average, BlockID, crewstartampm, FullStartTime, crewstopampm, Full_Stop_Time, Break1, Break2, Lunch_in, lunchinampm, Lunch_Out, lunchoutampm, vinecountcheck, Actual_Hours, TimeDiff, TimeDiff2nd, TimeDiff3rd, deleteDate) 
@@ -104,35 +104,33 @@ component extends="BaseHandler"{
 			",{
 				timeEntryFormRowIndex = { value = deserializeJSON(rc.rowIdx), cfsqltype = "cf_sql_integer"},
 				recieptnoVal = { value = newRecieptName, cfsqltype="cf_sql_varchar"}
-			});
+			}, { result="rowIdx" });
 	
 			queryExecute("
 				INSERT INTO change_log(clTEFID, clAction, clReciept, clUserID, clDate)
 				VALUES (:tefID, 'copy', :reciept, :userID, :currentDate)
 			",{
 				reciept = { value = newRecieptName, cfsqltype = "cf_sql_varchar" },
-				tefID = { value = deserializeJSON(rc.rowIdx), cfsqltype = "cf_sql_integer" },
+				tefID = { value = rowIdx.generated_key, cfsqltype = "cf_sql_integer" },
 				userID = { value = 1, cfsqltype="cf_sql_integer"},
 				currentDate = { value = now(), cfsqltype="cf_sql_date"}
 			});
 
 			return newRecieptName;
 		}
-		else{
+		else {
 
 			// dump(rc); abort;
 
 			var colNamesToQry = [];
 			var newRowData = deserializeJSON(rc.newRowData);
 			var newRowsToQry = {};
-			// var newRowsList = [];
 
 			var index = 0;
 			for(data in newRowData){
 				if(getQueryColNames().find(data) && !isNull(newRowData[data]) && newRowData[data] != "" && newRowData[data] != "0"){
 					index++;
 					newRowsToQry[data] = { value = newRowData[data] };
-					// newRowsList[index] = newRowData[data];
 					colNamesToQry[index] = data;
 				}
 			}
@@ -141,15 +139,18 @@ component extends="BaseHandler"{
 				queryExecute("
 					INSERT INTO TIME_ENTRY_FORM_V2 (" & arrayToList(colNamesToQry, ',') & ")
 					VALUES (" & ':' & arrayToList(colNamesToQry, ', :') & ")
-				",newRowsToQry);
+				",newRowsToQry , { result="newRecord" });
+			
+				queryExecute("
+					INSERT INTO change_log(clAction, clUserID, clDate, clReciept, clTEFID)
+					VALUES('add', :userID, :currentDate, :reciept, :tefID)
+				",{
+					reciept = { value = deserializeJSON(rc.newRowData).RECIEPTNO, cfsqltype = "cf_sql_varchar" },
+					userID = { value = 1, cfsqltype = "cf_sql_integer" },
+					currentDate = { value = now(), cfsqltype = "cf_sql_date" },
+					tefID = { value = newRecord.generated_key, cfsqltype = "cf_sql_integer" }
+				});
 			}
-
-			// queryExecute("
-			// 	INSERT INTO change_log()
-			// 	VALUES()
-			// ",{
-
-			// });
 		}
     }
 
