@@ -137,7 +137,43 @@ component {
 		 *
 		 * }
 		 */
-		moduleSettings = {};
+		moduleSettings = {
+			cbSecurity : {
+				// The global invalid authentication event or URI or URL to go
+				// if an invalid authentication occurs
+				"invalidAuthenticationEvent" : "auth.index",
+				// The global invalid authorization event or URI or URL to go
+				// if an invalid authorization occurs
+				"invalidAuthorizationEvent"  : "site_ui:main.onInvalidAuthorization",
+				// The validator is an object that will validate rules
+				// and annotations and provide feedback on either authentication or
+				// authorization issues.
+				// WireBox ID of the user service to use
+				"userService"                : "User@site_core",
+				// Force SSL for all relocations
+				"useSSL"            			: false,
+				// Activate handler/action based annotation security
+				"handlerAnnotationSecurity"     : false,
+				"rules": [
+					{
+						"whitelist": "site_ui:auth, site_ui:main",
+						"securelist": "site_ui",
+						"match": "event",
+						"roles": "admin",
+						"permissions": "",
+						"action" : "redirect"
+					},
+					{
+						"whitelist": "v1:qbsync, v1:user",
+						"securelist": "v1",
+						"match": "event",
+						"roles": "admin",
+						"permissions": "",
+						"action" : "redirect"
+					}
+				]
+			}
+		};
 
 		/**
 		 * --------------------------------------------------------------------------
