@@ -19,7 +19,6 @@
 
 <script>
     <cfoutput>payrateData = #serializeJSON(prc.payrateData)#</cfoutput>
-    // console.log(payrateData);
 
     Vue.component('pq-grid', {
         props: ['options'],
@@ -55,7 +54,8 @@
             this.options = {
                 
                 showTitle: false,
-                showTop: true,
+                showTop: false,
+                showToolbar: false,
                 locale: 'en',
                 height: '100%',
                 
@@ -69,48 +69,20 @@
                 virtualX: true, virtualY: true,
                 selectionModel: { type: null },
                 
-                filterModel: { on: true, header: true, type: 'remote' },
-                sortModel: { type: 'remote', sorter: [{ dataIndx: 'Date', dir: 'up' }, { dataIndx: 'RECIEPTNO', dir: 'up' }] },
-
                 dataModel: {
                     data: this.$options.data1
                 },
 
-                toolbar:{
-                    items: [
-                        {
-                            type: 'button',
-                            icon: 'ui-icon-plus',
-                            label: 'Add Product',
-                            listener: function () {
-                                var _self = this;
-
-                                var rowData = {
-                                    pSeason: new Date(0),
-                                    pLeader: 0,
-                                    pAssistant: 0,
-                                    pQC: 0,
-                                    pFieldWorker: 0,
-                                };
-                                var rowIndx = _self.addRow({ rowIndxPage: 0, rowData: rowData, checkEditable: false, rowIndx: 0 });
-                                _self.options.editRow(rowIndx, this);
-                            }
-                        }
-                    ]
-                },
-
                 cellSave: function(evt, ui){
-                    // console.log(ui.rowData);
-
                     $.ajax({
                         url: "/api/v1/payrates/" + ui.rowData.pSeason,
                         method: "PUT",
-                        data: {updatedVal: ui.value}
+                        data: {updatedVal: JSON.stringify(ui.rowData)}
                     });
                 },
 
                 colModel: [
-                    { title: 'Season', width: 100, dataType: 'integer', dataIndx: 'pSeason' },
+                    { title: 'Season', width: 100, dataType: 'integer', dataIndx: 'pSeason'},
                     { title: 'Leader', width: 200, dataType: 'float', dataIndx: 'pLeader' },
                     { title: 'Assistant', width: 200, dataType: 'float', dataIndx: 'pAssistant' },
                     { title: 'QC', width: 200, dataType: 'float', dataIndx: 'pQC' },
@@ -121,13 +93,3 @@
         }
     });
 </script>
-
-<style>
-    tr.pq-grid-row.pq-row-edit {
-        background: #b2ffbe;
-    }
-
-    td.futer_date_error {
-        background: #ff2f2f3b;
-    }
-</style>

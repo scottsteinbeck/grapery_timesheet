@@ -8,6 +8,18 @@ component extends="coldbox.system.EventHandler" {
 			FROM payrates
 			ORDER BY pSeason DESC
 		",{},{returnType = 'array'});
+
+		if(prc.payrateData[1].pSeason < year(now())){
+			var newYear = prc.payrateData[1].pSeason + 1;
+			queryExecute("
+				INSERT INTO payrates (pSeason)
+				VALUES (:newYear)
+			",{
+				newYear = { value = newYear, cfsqltype = "cf_sql_numeric" }
+			});
+			
+			arrayPrepend(prc.payrateData, {"pSeason": newYear});
+		}
 	}
 
 	function changeLog(event, rc, prc){

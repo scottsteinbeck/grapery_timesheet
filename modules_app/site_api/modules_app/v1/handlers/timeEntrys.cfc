@@ -20,6 +20,8 @@ component extends="BaseHandler"{
 			"Variety_name",
 			"description",
 
+			"HOUR(TotalCalculatedTime) AS employeeHours",
+
 			"(vine_count / field_acres1) AS vines_per_acre",
 
 			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) AS total",
@@ -30,16 +32,18 @@ component extends="BaseHandler"{
 			"HOUR(TotalCalculatedTime) / (Totalvines / (vine_count / field_acres1)) AS employeeAcresPerHr",
 
 			// total / vineacres = acresPerHour
-			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) / (Totalvines / (vine_count / field_acres1)) AS acresPerHour"
+			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) / (Totalvines / (vine_count / field_acres1)) AS acresPerHour",
 		]);
 
 		if(rc.keyExists("pq_sort")) {
 			var usendingOrDesending = (deserializeJSON(rc.pq_sort)[1].dir == "up") ? "desc" : "asc";
-			var sortBuy = deserializeJSON(rc.pq_sort)[1].dataIndx;
+			var sortBy = deserializeJSON(rc.pq_sort)[1].dataIndx;
+			if(sortBy == "crew_info") sortBy = "Crew";
+			if(sortBy == "jobcode_info") sortBy = "description";
 		}
 		else {
 			var usendingOrDesending = "desc";
-			var sortBuy = "Date";
+			var sortBy = "Date";
 		}
 
 		var timeEntryForm = qb.newQuery().from('TIME_ENTRY_FORM_V2')
@@ -59,7 +63,7 @@ component extends="BaseHandler"{
 			.leftJoin('payrates', (j) => {
 				j.on('payrates.pSeason', j.raw('YEAR(Date)'));
 			})
-			.orderBy(sortBuy, usendingOrDesending)
+			.orderBy(sortBy, usendingOrDesending)
 			.when(rc.keyExists("pq_filter"), function(q){
 				var deserializedFilter = deserializeJSON(rc.pq_filter);
 				for(col in deserializedFilter.data) {
@@ -121,23 +125,31 @@ component extends="BaseHandler"{
 			var colNamesToQry = [];
 			var newRowData = deserializeJSON(rc.newRowData);
 			var newRowsToQry = {};
-			var newRowsList = [];
+			// var newRowsList = [];
 
 			var index = 0;
 			for(data in newRowData){
 				if(getQueryColNames().find(data) && !isNull(newRowData[data]) && newRowData[data] != "" && newRowData[data] != "0"){
 					index++;
 					newRowsToQry[data] = { value = newRowData[data] };
-					newRowsList[index] = newRowData[data];
+					// newRowsList[index] = newRowData[data];
 					colNamesToQry[index] = data;
-					dump(colNamesToQry[index]);
 				}
 			}
 
-			queryExecute("
-				INSERT INTO TIME_ENTRY_FORM_V2 (" & arrayToList(colNamesToQry, ',') & ")
-				VALUES (" & arrayToList(newRowsList, ',') & ")
-			",newRowsToQry);
+			if(arrayLen(colNamesToQry) > 0){
+				queryExecute("
+					INSERT INTO TIME_ENTRY_FORM_V2 (" & arrayToList(colNamesToQry, ',') & ")
+					VALUES (" & ':' & arrayToList(colNamesToQry, ', :') & ")
+				",newRowsToQry);
+			}
+
+			// queryExecute("
+			// 	INSERT INTO change_log()
+			// 	VALUES()
+			// ",{
+
+			// });
 		}
     }
 

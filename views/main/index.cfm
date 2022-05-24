@@ -51,6 +51,8 @@
         return acc;
     },{});
 
+    // function cellEditable(ui){ return this.hasClass({ rowIndx: ui.rowIndx, cls: 'pq-row-add' }); }
+
     function numberFormat(val){
         return Math.round(val * 100)/100
     }
@@ -174,37 +176,46 @@
                         {
                             type: 'button',
                             icon: 'ui-icon-plus',
-                            label: 'Add Product',
+                            label: 'Add Record',
                             listener: function () {
                                 var _self = this;
+                                var editableWhenAdding = [1,6,8,23];
+                                
+                                if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length){
 
-                                var rowData = {
-                                    RECIEPTNO: "",
-                                    crew_info: "",
-                                    Crew: 0,
-                                    vines_per_acre: 0,
-                                    FieldCode: "",
-                                    field_acres1: 0,
-                                    Variety_name: "",
-                                    vine_count: 0,
-                                    description: "",
-                                    Date: new Date(0),
-                                    acresPerHour: 0,
-                                    employeeAcresPerHr: 0,
-                                    QC_Average: 0,
-                                    Totalvines: 0,
-                                    vineacres: 0,
-                                    TimeDiff: "",
-                                    TimeDiff2nd: "",
-                                    QC_Hours: 0,
-                                    employeeHours: 0,
-                                    total: 0,
-                                    jobcode_info: ""
-                                };
-                                var rowIndx = _self.addRow({ rowIndxPage: 0, rowData: rowData, checkEditable: false, rowIndx: 0 });
-                                _self.options.editRow(rowIndx, this);
-                                this.options.colModel[1].editable = true;
-                                // this.options.colModel[1].cls = 'editable';
+                                    editableWhenAdding.forEach(x => {
+                                        _self.colModel[x].cls = "editable";
+                                        _self.colModel[x].editable = true;
+                                    });
+                                    _self.refreshRow({ rowIndx: rowIndx });
+
+                                    var rowData = {
+                                        RECIEPTNO: "",
+                                        crew_info: "",
+                                        Crew: 0,
+                                        vines_per_acre: 0,
+                                        FieldCode: "",
+                                        field_acres1: 0,
+                                        Variety_name: "",
+                                        vine_count: 0,
+                                        description: "",
+                                        Date: new Date(),
+                                        acresPerHour: 0,
+                                        employeeAcresPerHr: 0,
+                                        QC_Average: 0,
+                                        Totalvines: 0,
+                                        vineacres: 0,
+                                        TimeDiff: "",
+                                        TimeDiff2nd: "",
+                                        QC_Hours: 0,
+                                        employeeHours: 0,
+                                        total: 0,
+                                        jobcode_info: ""
+                                    };
+                                    var rowIndx = _self.addRow({ rowIndxPage: 0, rowData: rowData, checkEditable: false, rowIndx: 0 });
+                                    _self.options.editRow(rowIndx, this);
+                                    _self.addClass({ rowIndx: rowIndx, cls: "pq-row-add" });
+                                }
                             }
                         }
                     ]
@@ -213,6 +224,8 @@
                 editRow: function(rowIndx, grid) {
                     var _self = this;
                     var oldRowData = Object.assign({}, grid.getRowData({ rowIndx: rowIndx }));
+
+                    grid.refreshRow({ rowIndx: rowIndx });
                     
                     grid.addClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
                     
@@ -224,9 +237,20 @@
                     deletebtn.text('Cancel')
                         .unbind("click")
                         .click(function (evt) {
-                            grid.quitEditMode();
-                            grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
-                            grid.rollback();
+                            if(grid.hasClass({rowIndx: rowIndx, cls: "pq-row-add"})){
+                                grid.deleteRow({ rowIndx: rowIndx });
+                            }
+                            else{
+                                grid.quitEditMode();
+                                grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
+                                grid.rollback();
+                            }
+
+                            var editableWhenAdding = [1,6,8,23];
+                            editableWhenAdding.forEach(x => {
+                                _self.colModel[x].cls = "";
+                                _self.colModel[x].editable = false;
+                            });
                         });
                         
                         var editbtn = tr.find("button.edit_btn");
@@ -237,6 +261,13 @@
                             grid.quitEditMode();
                             grid.removeClass( {rowIndx: rowIndx, cls: 'pq-row-edit'} );
                             grid.rollback();
+
+                            var editableWhenAdding = [1,6,8,23];
+                            editableWhenAdding.forEach(x => {
+                                _self.colModel[x].cls = "";
+                                _self.colModel[x].editable = false;
+                            });
+
                             return false;
                         });
                 },
@@ -340,6 +371,7 @@
                 },
 
                 editModel: { clicksToEdit: 1, onTab: 'nextEdit', onBlur: '', saveKey: null, },
+
                 freezeCols: 1,
                 colModel: [
                     { title: "Edit", editable: false, width: 120, sortable: false,
@@ -428,7 +460,7 @@
                         }
                     },
 
-                    { title: "Reciept Number", width: 100, editable: false, dataIndx: "RECIEPTNO", datatype: "string",
+                    { title: "Reciept Number", width: 100, dataIndx: "RECIEPTNO", datatype: "string", editable: false, 
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
                     { title: "Crew", dataIndx: "crew_info", width: 250, dataType: "string", cls: 'editable',
@@ -465,13 +497,13 @@
                         }}], type: 'textbox', value: "", on: true }
                     },
 
-                    { title: "Total Acres", width: 100, editable: false, dataIndx: "field_acres1", dataType: "float",
+                    { title: "Total Acres", width: 100, dataIndx: "field_acres1", dataType: "float", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string", cls: 'editable',
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Field Total Vines", width: 100, editable: false, dataIndx: "vine_count", dataType: "integer",
+                    { title: "Field Total Vines", width: 100, dataIndx: "vine_count", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Operation Name", width: 130, dataIndx: "description", dataType: "string", cls: 'editable',
