@@ -117,7 +117,11 @@
 		</b-modal>
 	</div>
 </cfoutput>
+<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuelidate@0.7.6/dist/vuelidate.min.js" integrity="sha256-4wHDIs7DYJ0xz+FlWjIu4kPe2jFk+KAg+JH4vgi9WRs=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuelidate@0.7.6/dist/validators.min.js" integrity="sha256-Bm9w6Cif2Vx+HnSoGdKn3/mgtowQA5eACGYIh5QaUvQ=" crossorigin="anonymous"></script>
 
+<link rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
 <script>
 	Vue.use(BootstrapVue)
 	Vue.use(window.vuelidate.default)

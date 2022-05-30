@@ -31,7 +31,8 @@
         "qb":"modules/qb/",
         "jsondiff":"modules/jsondiff/",
         "bolthttp":"modules/bolthttp/",
-        "quick":"modules/quick/"
+        "quick":"modules/quick/",
+        "cbvalidation":"modules/cbvalidation/"
     },
     "dependencies":{
         "coldbox":"^6.0.0",
@@ -40,7 +41,8 @@
         "qb":"^8.7.7",
         "jsondiff":"^1.0.4",
         "bolthttp":"^1.0.1",
-        "quick":"^4.2.4"
+        "quick":"^4.2.4",
+        "cbvalidation":"^3.3.0+10"
     },
     "scripts":{},
     "testbox":{

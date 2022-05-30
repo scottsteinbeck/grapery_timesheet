@@ -1,4 +1,4 @@
-component extends="BaseHandler" {
+component {
 
 	any function index( event, rc, prc ) {
 		relocate( "Manage.StaffList" );
