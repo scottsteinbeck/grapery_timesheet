@@ -30,7 +30,8 @@
         "spreadsheet-cfml":"modules/spreadsheet-cfml/",
         "qb":"modules/qb/",
         "jsondiff":"modules/jsondiff/",
-        "bolthttp":"modules/bolthttp/"
+        "bolthttp":"modules/bolthttp/",
+        "quick":"modules/quick/"
     },
     "dependencies":{
         "coldbox":"^6.0.0",
@@ -38,7 +39,8 @@
         "spreadsheet-cfml":"^3.4.4",
         "qb":"^8.7.7",
         "jsondiff":"^1.0.4",
-        "bolthttp":"^1.0.1"
+        "bolthttp":"^1.0.1",
+        "quick":"^4.2.4"
     },
     "scripts":{},
     "testbox":{

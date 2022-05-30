@@ -9,6 +9,8 @@ component {
 
 		resources( resource = "Auth", parameterName = "id-numeric" );
 		
+		resources( resource = "staff", parameterName = "userID-numeric" );
+
 		route( "export/:handler/:action" ).end();
 	}
 

@@ -138,6 +138,9 @@ component {
 		 * }
 		 */
 		moduleSettings = {
+			cbAuth: {
+				userServiceClass: "User@site_core"
+			},
 			cbSecurity : {
 				// The global invalid authentication event or URI or URL to go
 				// if an invalid authentication occurs

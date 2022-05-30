@@ -11,7 +11,7 @@
 				<div class="card-body">
 					<div class="m-sm-4">
 						<div class="text-center">
-							<img src="/resources/img/header/<cfoutput>#prc.site.logo#</cfoutput>" class="img-fluid" width="300" />
+
 						</div>
 						 <cfoutput>
 							<div class="text-center mt-4">
