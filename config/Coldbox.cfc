@@ -144,7 +144,7 @@ component {
 				"invalidAuthenticationEvent" : "auth.index",
 				// The global invalid authorization event or URI or URL to go
 				// if an invalid authorization occurs
-				"invalidAuthorizationEvent"  : "site_ui:main.onInvalidAuthorization",
+				"invalidAuthorizationEvent"  : "main.onInvalidAuthorization",
 				// The validator is an object that will validate rules
 				// and annotations and provide feedback on either authentication or
 				// authorization issues.
@@ -156,16 +156,8 @@ component {
 				"handlerAnnotationSecurity"     : false,
 				"rules": [
 					{
-						"whitelist": "site_ui:auth, site_ui:main",
-						"securelist": "site_ui",
-						"match": "event",
-						"roles": "admin",
-						"permissions": "",
-						"action" : "redirect"
-					},
-					{
-						"whitelist": "v1:qbsync, v1:user",
-						"securelist": "v1",
+						"whitelist": "Auth",
+						"securelist": "main",
 						"match": "event",
 						"roles": "admin",
 						"permissions": "",
