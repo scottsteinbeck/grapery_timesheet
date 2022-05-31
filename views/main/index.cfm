@@ -167,105 +167,18 @@
                             label: 'Add Record',
                             listener: function () {
                                 var _self = this;
-                                var editableWhenAdding = [1,6,8,23];
-                                
-                                if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length){
 
-                                    editableWhenAdding.forEach(x => {
-                                        _self.colModel[x].cls = "editable";
-                                        _self.colModel[x].editable = true;
-                                    });
-                                    _self.refreshRow({ rowIndx: rowIndx });
 
-                                    var date = new Date();
-                                    var rowData = {
-                                        RECIEPTNO: "",
-                                        crew_info: "",
-                                        Crew: 0,
-                                        vines_per_acre: 0,
-                                        FieldCode: "",
-                                        field_acres1: 0,
-                                        Variety_name: "",
-                                        vine_count: 0,
-                                        description: "",
-                                        Date: ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1))) + '/' + ((date.getDate() > 9) ? date.getDate() : ('0' + date.getDate())) + '/' + date.getFullYear(),
-                                        acresPerHour: 0,
-                                        employeeAcresPerHr: 0,
-                                        QC_Average: 0,
-                                        Totalvines: 0,
-                                        vineacres: 0,
-                                        TimeDiff: "",
-                                        TimeDiff2nd: "",
-                                        QC_Hours: 0,
-                                        employeeHours: 0,
-                                        total: 0,
-                                        jobcode_info: ""
-                                    };
-                                    var rowIndx = _self.addRow({ rowIndxPage: 0, rowData: rowData, checkEditable: false, rowIndx: 0 });
-                                    _self.options.editRow(rowIndx, this);
-                                    _self.addClass({ rowIndx: rowIndx, cls: "pq-row-add" });
-                                }
                             }
                         }
                     ]
                 },
 
-                editRow: function(rowIndx, grid) {
-                    var _self = this;
-                    var oldRowData = Object.assign({}, grid.getRowData({ rowIndx: rowIndx }));
-
-                    grid.refreshRow({ rowIndx: rowIndx });
-                    
-                    grid.addClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
-                    
-                    grid.editFirstCellInRow({ rowIndx: rowIndx });
-
-                    var tr = grid.getRow({ rowIndx: rowIndx });
-                    tr.find("button.copy_btn").remove();
-                    var deletebtn = tr.find("button.delete_btn");
-                    deletebtn.text('Cancel')
-                        .unbind("click")
-                        .click(function (evt) {
-                            if(grid.hasClass({rowIndx: rowIndx, cls: "pq-row-add"})){
-                                grid.deleteRow({ rowIndx: rowIndx });
-                            }
-                            else{
-                                grid.quitEditMode();
-                                grid.removeClass({ rowIndx: rowIndx, cls: "pq-row-edit" });
-                                grid.rollback();
-                            }
-
-                            var editableWhenAdding = [1,6,8,23];
-                            editableWhenAdding.forEach(x => {
-                                _self.colModel[x].cls = "";
-                                _self.colModel[x].editable = false;
-                            });
-                        });
-                        
-                        var editbtn = tr.find("button.edit_btn");
-                        editbtn.text('Save')
-                        .unbind("click")
-                        .click(function (evt) {
-                            grid.options.update(rowIndx, grid, oldRowData);
-                            grid.quitEditMode();
-                            grid.removeClass( {rowIndx: rowIndx, cls: 'pq-row-edit'} );
-                            grid.rollback();
-
-                            var editableWhenAdding = [1,6,8,23];
-                            editableWhenAdding.forEach(x => {
-                                _self.colModel[x].cls = "";
-                                _self.colModel[x].editable = false;
-                            });
-
-                            return false;
-                        });
-                },
-
                 update: function(rowIndx, grid, oldRowData){
 
-                    if (grid.saveEditCell() == false) {
-                        return false;
-                    }
+                    // if (grid.saveEditCell() == false) {
+                    //     return false;
+                    // }
                     
                     grid.showLoading();
                     rowData = calculateRow(grid.getRowData({ rowIndx: rowIndx }));
@@ -359,8 +272,6 @@
                     }
                 },
 
-                editModel: { clicksToEdit: 1, onBlur: '' },
-
                 freezeCols: 1,
                 colModel: [
                     { title: "Edit", editable: false, width: 120, sortable: false,
@@ -372,9 +283,6 @@
                             var cell = _self.getCell(ui);
 
                             if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length){
-                            
-                                var date = new Date();
-                                console.log(date.getTime());
                                 
                                 // Copy button ---------------------------------------
                                 cell.find(".copy_btn").bind("click", function(evt){
@@ -447,9 +355,150 @@
 
                                 // Edit button ---------------------------------------
                                 cell.find(".edit_btn").bind("click", function(evt){
-                                    if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length) {
-                                        _self.options.editRow(ui.rowIndx, _self);
-                                    }
+
+                                    var rowDt = ui.rowData;
+
+                                    var rowEditHtml = `
+                                        <label for='crew'>Crew</label>
+                                        <select id='crew' value="`+ rowDt.Crew + `">
+                                            ` + crew.reduce(function(acc, x){
+                                                var opiningOptionTag = "<option" +( (x.CrewNumber == rowDt.Crew) ? " selected = selected " : "" )+ " value='"+ x.CrewNumber +"'>";
+                                                var closingOptionTag = "</option>";
+                                                acc += opiningOptionTag + x.CrewLead + closingOptionTag;
+                                                return acc;
+                                            }, "") + `
+                                        </select>
+
+                                        <br>
+                                    
+                                        <label for="field">Field</label>
+                                        <select id="field">
+                                            ` + polyfield.reduce(function(acc, x){
+                                                var opiningOptionTag = "<option" +( (x.field_name == rowDt.FieldCode) ? " selected = selected " : "" )+ ">";
+                                                var closingOptionTag = "</option>";
+                                                acc += opiningOptionTag + x.field_name + closingOptionTag;
+                                                return acc;
+                                            }, "") + `
+                                        </select>
+
+                                        <br>
+
+                                        <label for="totalAcers">Total Acres</label>
+                                        <input type='number' id='totalAcers' value='`+ rowDt.field_acres1 +`'>
+
+                                        <br>
+
+                                        <label for='varietyName'>Variety Name</label>
+                                        <input type='text' id='varietyName' value='`+ rowDt.Variety_name +`'>
+
+                                        <br>
+
+                                        <label for='fieldTotalVines'>Field Total Vines</label>
+                                        <input type='number' id='fieldTotalVines' value='`+ rowDt.vine_count +`'>
+
+                                        <br>
+
+                                        <label for='crewData'>Crew Date</label>
+                                        <input type='date' id='crewData' value='`+ rowDt.Date +`'>
+
+                                        <br>
+
+                                        <label for='qcAverage'>Quality Score</label>
+                                        <input type='number' id='qcAverage' value='`+ rowDt.QC_Average +`'>
+
+                                        <br>
+
+                                        <label for='totalVines'>Total Vines</label>
+                                        <input type='number' id='totalVines' value='`+ rowDt.Totalvines +`'>
+
+                                        <br>
+
+                                        <label for='leaderHours'>Leader Hours</label>
+                                        <input type='number' id='leaderHours' value='`+ rowDt.TimeDiff +`'>
+
+                                        <br>
+
+                                        <label for='assistantHours'>Assistant Hours</label>
+                                        <input type='number' id='assistantHours' value='`+ rowDt.TimeDiff2nd +`'>
+
+                                        <br>
+
+                                        <label for='qcHours'>QC_hours</label>
+                                        <input type='number' id='qcHours' value='`+ rowDt.QC_Hours +`'>
+
+                                        <br>
+
+                                        <label for='totalCost'>Total Cost</label>
+                                        <input type='number' id='totalCost' value='`+ rowDt.total +`'>
+
+                                        <br>
+
+                                        <label for="jobcodes">Jobcode</label>
+                                        <select id="jobcodes">
+                                            ` + jobcodes.reduce(function(acc, x){
+                                                var opiningOptionTag = "<option" +( (x.jobcode == rowDt.JobCode) ? " selected = selected " : "" )+ ">";
+                                                var closingOptionTag = "</option>";
+                                                acc += opiningOptionTag + x.description + closingOptionTag;
+                                                return acc;
+                                            }) + `
+                                        </select>
+
+                                        <br>
+
+                                        <label for='blockID'>BlockID</label>
+                                        <input type='text' id='blockID' value='`+ rowDt.BlockID +`'>
+                                    `;
+
+                                    $('<div></div>').appendTo('body')
+                                    .html(rowEditHtml)
+                                    .dialog({
+                                        modal: true,
+                                        title: 'Edit row',
+                                        zIndex: 10000,
+                                        classes:{
+                                            'ui-dialog-titlebar-close': 'ui-button ui-corner-all ui-widget ui-button-icon-only'
+                                        },
+                                        autoOpen: true,
+                                        width: 'auto',
+                                        resizable: false,
+                                        buttons: [{
+                                            text: "Ok",
+                                            class:"ui-button ui-corner-all ui-widget",
+                                            click: function() {
+                                                    var newRowData = {
+                                                        crew_info: $('#crew').val(),
+                                                        FieldCode: $('#field').val(),
+                                                        field_acres1: $('#totalAcers').val(),
+                                                        Variety_name: $('#varietyName').val(),
+                                                        vine_count: $('#fieldTotalVines').val(),
+                                                        Date: $('#crewData').val(),
+                                                        QC_Average: $('#qcAverage').val(),
+                                                        Totalvines: $('#totalVines').val(),
+                                                        TimeDiff: $('#leaderHours').val(),
+                                                        QC_Hours: $('#assistantHours').val(),
+                                                        total: $('#qcHours').val(),
+                                                        jobcode_info: $('#totalCost').val(),
+                                                        BlockID: $('#jobcodes').val(),
+                                                    }
+
+                                                    _self.updateRow({rowIndx: ui.rowIndx, newRow: newRowData, checkEditable: false});
+
+                                                    $( this ).dialog( "close" );
+                                                }
+                                            },
+                                            {
+                                                text: "Cancel",
+                                                class:"ui-button ui-corner-all ui-widget",
+                                                click: function() {
+                                                    $( this ).dialog( "close" );
+                                                    resolt = false;
+                                                }
+                                            }
+                                        ],
+                                        close: function(event, ui) {
+                                            $(this).remove();
+                                        }
+                                    });
                                 });
                             }
                         }
@@ -458,29 +507,16 @@
                     { title: "Reciept Number", width: 100, dataIndx: "RECIEPTNO", datatype: "string", editable: false, 
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", cls: 'editable',
-                        editor: {
-                            type: 'select',
-                            valueIndx: "CrewNumber",
-                            labelIndx: "CrewLead",
-                            mapIndices: { CrewNumber: 'Crew', CrewLead: 'crew_info' },
-                            options: crew
-                        },
+                    { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
                     },
 
-                    { dataIndx: "Crew", hidden:true, dataType: "integer" },
+                    // { dataIndx: "Crew", hidden:true, dataType: "integer" },
 
                     { title:'Field Vines per Acre', width: 120, editable: false, dataIndx: "vines_per_acre", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", cls: 'editable',
-                        editor: {
-                            type: 'select',
-                            valueIndx: "field_name",
-                            labelIndx: "field_name",
-                            options: polyfield
-                        },
+                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", editable: false,
                         filter: { condition: 'begin', listeners: [{'change' : function(evt, item){
                             var grid = $(this).closest(".pq-grid");
                             // grid.pqGrid( { dataModel: { data: grid.pqGrid("option").pqIS.data } });
@@ -495,16 +531,13 @@
                     { title: "Total Acres", width: 100, dataIndx: "field_acres1", dataType: "float", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string", cls: 'editable',
+                    { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Field Total Vines", width: 100, dataIndx: "vine_count", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
-
-                    { title: "Operation Name", width: 130, dataIndx: "description", dataType: "string", cls: 'editable',
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
-                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "date", cls: 'editable', format: "mm/dd/yy",
+                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "date", format: "mm/dd/yy", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] },
                         render: function(ui){
                             var curDate = new Date();
@@ -523,22 +556,22 @@
                     { title: "Man Hr / Acre Actual", width: 150, editable: false, dataIndx: "employeeAcresPerHr", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float", cls: 'editable',
+                    { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Total Vines", width: 100, dataIndx: "Totalvines", dateType: "integer", cls: 'editable',
+                    { title: "Total Vines", width: 100, dataIndx: "Totalvines", dateType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Acres", width: 100, editable: false, dataIndx: "vineacres", dateType: "float",
+                    { title: "Acres", width: 100, dataIndx: "vineacres", dateType: "float", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string", cls: 'editable',
+                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }}, 
 
-                    {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd", dataType: "string", cls: 'editable',
+                    {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd", dataType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                     
-                    { title: "QC_Hours", width: 100, dataIndx: "QC_Hours", dateType: "float", cls: 'editable',
+                    { title: "QC_Hours", width: 100, dataIndx: "QC_Hours", dateType: "float", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
                     {title: 'Employee Hours', width:100, dataIndx: "employeeHours", editable: false, dateType: "integer",
@@ -547,7 +580,7 @@
                     { title: "Total Cost", width: 100, dataIndx: "total", editable: false, dateType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Jobcode", width: 200, dataIndx: "jobcode_info", dateType: "string", cls: 'editable',
+                    { title: "Jobcode", width: 200, dataIndx: "jobcode_info", dateType: "string",
                         editor: {
                             type: 'select',
                             valueIndx: "jobcode",
@@ -575,11 +608,8 @@
                     { title: "Field Worker Payrates", width: 250, dataIndx: "pFieldWorker", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
                 ],
-
-                editable: function(ui){
-                    return this.hasClass({ rowIndx: ui.rowIndx, cls: 'pq-row-edit' });
-                }
             };
+
             return {
                 rowIndex: -1,
             };
@@ -591,14 +621,6 @@
 </script>
 
 <style>
-    tr.pq-grid-row.pq-row-edit {
-        background: #b2ffbe;
-    }
-
-    tr.pq-grid-row.pq-row-edit td.editable {
-        font-weight: bolder;
-        background: #92f1a1;
-    }
 
     td.futer_date_error {
         background: #ff2f2f3b;

@@ -80,7 +80,7 @@ component extends="BaseHandler"{
 	}
 
 	function create( event, rc, prc ) {
-		// dump(rc); abort;
+		dump(rc); abort;
 
 		if(rc.keyExists("copyReciept")) {
 			
