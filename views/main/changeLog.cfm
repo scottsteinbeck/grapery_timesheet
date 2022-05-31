@@ -1,19 +1,7 @@
 <div id="mainVue">
 
-    <ul class="nav nav-tabs">
-        <li class="nav-item">
-            <a class="nav-link" href="/main">Data</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" href="#">Change log</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/main/payrates">Payrates</a>
-        </li>
-    </ul>
-
     <table class="table">
-        <thead class="table-dark">
+        <thead>
             <tr>
                 <th>Action</th>
                 <th>Reciept</th>

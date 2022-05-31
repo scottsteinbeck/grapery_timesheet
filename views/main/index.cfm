@@ -1,17 +1,5 @@
 <!--- <cfdump var="#prc.data#"> --->
 <div id="app">
-    
-    <ul class="nav nav-tabs">
-        <li class="nav-item">
-            <a class="nav-link active" href="#">Data</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/main/changeLog">Change log</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/main/payrates">Payrates</a>
-        </li>
-    </ul>
 
     <div style="height: calc(100vh - 115px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
@@ -371,7 +359,7 @@
                     }
                 },
 
-                editModel: { clicksToEdit: 1, onTab: 'nextEdit', onBlur: '', saveKey: null, },
+                editModel: { clicksToEdit: 1, onBlur: '' },
 
                 freezeCols: 1,
                 colModel: [
@@ -382,89 +370,95 @@
                         postRender: function(ui) {
                             var _self = this;
                             var cell = _self.getCell(ui);
+
+                            if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length){
                             
-                            // Copy button ---------------------------------------
-                            cell.find(".copy_btn").bind("click", function(evt){
+                                var date = new Date();
+                                console.log(date.getTime());
+                                
+                                // Copy button ---------------------------------------
+                                cell.find(".copy_btn").bind("click", function(evt){
 
-                                _self.showLoading();
-                                $.ajax({
-                                    url: "/api/v1/timeEntrys",
-                                    method: "POST",
-                                    data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX,
-                                        copyReciept: ui.rowData.RECIEPTNO.split("_")[0]
-                                    },
-                                    success: (function(data){
-                                        var copedRowData = Object.assign({}, ui.rowData);
-                                        copedRowData.RECIEPTNO = data;
-                                        var rowIndex = _self.addRow({ rowIndxPage: 0, rowData: copedRowData, checkEditable: false, rowIndx: ui.rowIndx });
-                                        _self.refreshRow({ rowIndx: rowIndex });
-
-                                        _self.hideLoading();
-                                    })
-                                });
-                            });
-
-                            // Delete button ---------------------------------------
-                            cell.find(".delete_btn").bind("click", function(evt){
-
-                                $('<div></div>').appendTo('body')
-                                .html('<div><h6> Are you sure you want to delete this item?</h6></div>')
-                                .dialog({
-                                    modal: true,
-                                    title: 'Delete message',
-                                    zIndex: 10000,
-                                    classes:{
-                                        'ui-dialog-titlebar-close': 'ui-button ui-corner-all ui-widget ui-button-icon-only'
-                                    },
-                                    autoOpen: true,
-                                    width: 'auto',
-                                    resizable: false,
-                                    buttons: [{
-                                        text: "Yes",
-                                        class:"ui-button ui-corner-all ui-widget",
-                                        click: function() {
-                                                $( this ).dialog( "close" );
-                                                
-                                                _self.showLoading();
-                                                deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
-                                                $.ajax({
-                                                    url: deleteUrl,
-                                                    method: "DELETE",
-                                                    data: { reciept: ui.rowData.RECIEPTNO }
-                                                }).done(function(){
-                                                    _self.deleteRow({ rowIndx: ui.rowIndx });
-                                                    _self.hideLoading();
-                                                });
-                                            }
+                                    _self.showLoading();
+                                    $.ajax({
+                                        url: "/api/v1/timeEntrys",
+                                        method: "POST",
+                                        data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX,
+                                            copyReciept: ui.rowData.RECIEPTNO.split("_")[0]
                                         },
-                                        {
-                                            text: "No",
+                                        success: (function(data){
+                                            var copedRowData = Object.assign({}, ui.rowData);
+                                            copedRowData.RECIEPTNO = data;
+                                            var rowIndex = _self.addRow({ rowIndxPage: 0, rowData: copedRowData, checkEditable: false, rowIndx: ui.rowIndx });
+                                            _self.refreshRow({ rowIndx: rowIndex });
+
+                                            _self.hideLoading();
+                                        })
+                                    });
+                                });
+
+                                // Delete button ---------------------------------------
+                                cell.find(".delete_btn").bind("click", function(evt){
+
+                                    $('<div></div>').appendTo('body')
+                                    .html('<div><h6> Are you sure you want to delete this item?</h6></div>')
+                                    .dialog({
+                                        modal: true,
+                                        title: 'Delete message',
+                                        zIndex: 10000,
+                                        classes:{
+                                            'ui-dialog-titlebar-close': 'ui-button ui-corner-all ui-widget ui-button-icon-only'
+                                        },
+                                        autoOpen: true,
+                                        width: 'auto',
+                                        resizable: false,
+                                        buttons: [{
+                                            text: "Yes",
                                             class:"ui-button ui-corner-all ui-widget",
                                             click: function() {
-                                                $( this ).dialog( "close" );
-                                                resolt = false;
+                                                    $( this ).dialog( "close" );
+                                                    
+                                                    _self.showLoading();
+                                                    deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
+                                                    $.ajax({
+                                                        url: deleteUrl,
+                                                        method: "DELETE",
+                                                        data: { reciept: ui.rowData.RECIEPTNO }
+                                                    }).done(function(){
+                                                        _self.deleteRow({ rowIndx: ui.rowIndx });
+                                                        _self.hideLoading();
+                                                    });
+                                                }
+                                            },
+                                            {
+                                                text: "No",
+                                                class:"ui-button ui-corner-all ui-widget",
+                                                click: function() {
+                                                    $( this ).dialog( "close" );
+                                                    resolt = false;
+                                                }
                                             }
+                                        ],
+                                        close: function(event, ui) {
+                                            $(this).remove();
                                         }
-                                    ],
-                                    close: function(event, ui) {
-                                        $(this).remove();
+                                    });
+                                });
+
+                                // Edit button ---------------------------------------
+                                cell.find(".edit_btn").bind("click", function(evt){
+                                    if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length) {
+                                        _self.options.editRow(ui.rowIndx, _self);
                                     }
                                 });
-                            });
-
-                            // Edit button ---------------------------------------
-                            cell.find(".edit_btn").bind("click", function(evt){
-                                if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length) {
-                                    _self.options.editRow(ui.rowIndx, _self);
-                                }
-                            });
+                            }
                         }
                     },
 
                     { title: "Reciept Number", width: 100, dataIndx: "RECIEPTNO", datatype: "string", editable: false, 
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Crew", dataIndx: "crew_info", width: 250, dataType: "string", cls: 'editable',
+                    { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", cls: 'editable',
                         editor: {
                             type: 'select',
                             valueIndx: "CrewNumber",
@@ -477,7 +471,7 @@
 
                     { dataIndx: "Crew", hidden:true, dataType: "integer" },
 
-                    { title:'Field Vines per Acre', width:150, editable: false, dataIndx: "vines_per_acre", dataType: "float",
+                    { title:'Field Vines per Acre', width: 120, editable: false, dataIndx: "vines_per_acre", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
                     { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", cls: 'editable',
@@ -523,10 +517,10 @@
                         }
                     },
 
-                    { title: "Cost / Acre Actual", width: 100, editable: false, dataIndx: "acresPerHour", dataType: "float",
+                    { title: "Cost / Acre Actual", width: 150, editable: false, dataIndx: "acresPerHour", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Man Hr / Acre Actual", width: 100, editable: false, dataIndx: "employeeAcresPerHr", dataType: "float",
+                    { title: "Man Hr / Acre Actual", width: 150, editable: false, dataIndx: "employeeAcresPerHr", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float", cls: 'editable',
@@ -572,13 +566,13 @@
                     { title: "Leader Payrates", width: 100, dataIndx: "pLeader", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Assistant Payrates", width: 100, dataIndx: "pAssistant", dataType: "integer", editable: false,
+                    { title: "Assistant Payrates", width: 150, dataIndx: "pAssistant", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
                     { title: "QC Payrates", width: 100, dataIndx: "pQC", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Field Worker Payrates", width: 100, dataIndx: "pFieldWorker", dataType: "integer", editable: false,
+                    { title: "Field Worker Payrates", width: 250, dataIndx: "pFieldWorker", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
                 ],
 

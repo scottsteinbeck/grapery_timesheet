@@ -75,12 +75,35 @@
 >
 	<!---Top NavBar --->
 	<header>
-		<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+		<nav class="navbar navbar-expand-lg bg-dark navbar-dark fixed-top" id="mainMainVue">
+
 			<div class="container-fluid">
 				<!---Brand --->
 				<a class="navbar-brand" href="#event.buildLink( 'main' )#">
 					<strong><i class="bi bi-bounding-box-circles"></i> Grapery Timesheet Editor</strong>
 				</a>
+				
+				<cfif auth().isLoggedIn()>
+					<ul class="navbar-nav">
+						<li class="nav-item">
+							<a class="nav-link <cfif rc.event == 'main.index'>active</cfif>" href="##">Data</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link <cfif rc.event == 'main.changeLog'>active</cfif>" href="/main/changeLog">Change log</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link <cfif rc.event == 'main.payrates'>active</cfif>" href="/main/payrates">Payrates</a>
+						</li>
+						<cfif auth().user().getRole() == 4>
+							<li class="nav-item">
+								<a class="nav-link <cfif rc.event == 'Admin.stafflist'>active</cfif>" href="/Admin/stafflist">Staff list</a>
+							</li>
+						</cfif>
+						<li class="nav-item">
+							<a class="nav-link" href="/Auth/logout">Log out</a>
+						</li>
+					</ul>
+				</cfif>
 
 				<!--- Mobile Toggler --->
 				<button
@@ -94,7 +117,7 @@
 				>
 					<span class="navbar-toggler-icon"></span>
 				</button>
-
+				
 				<div class="collapse navbar-collapse" id="navbarSupportedContent">
 
 				</div>

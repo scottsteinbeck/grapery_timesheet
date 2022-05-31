@@ -1,17 +1,4 @@
 <div id="app">
-
-    <ul class="nav nav-tabs">
-        <li class="nav-item">
-            <a class="nav-link" href="main/index">Data</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/main/changeLog">Change log</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" href="#">Payrates</a>
-        </li>
-    </ul>
-
     <div style="height: calc(100vh - 115px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
     </div>

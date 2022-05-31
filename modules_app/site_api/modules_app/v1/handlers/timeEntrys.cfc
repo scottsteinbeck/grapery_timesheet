@@ -112,7 +112,7 @@ component extends="BaseHandler"{
 			",{
 				reciept = { value = newRecieptName, cfsqltype = "cf_sql_varchar" },
 				tefID = { value = rowIdx.generated_key, cfsqltype = "cf_sql_integer" },
-				userID = { value = 1, cfsqltype="cf_sql_integer"},
+				userID = { value = auth().getUserId(), cfsqltype="cf_sql_integer"},
 				currentDate = { value = now(), cfsqltype="cf_sql_date"}
 			});
 
@@ -146,7 +146,7 @@ component extends="BaseHandler"{
 					VALUES('add', :userID, :currentDate, :reciept, :tefID)
 				",{
 					reciept = { value = deserializeJSON(rc.newRowData).RECIEPTNO, cfsqltype = "cf_sql_varchar" },
-					userID = { value = 1, cfsqltype = "cf_sql_integer" },
+					userID = { value = auth().getUserId(), cfsqltype = "cf_sql_integer" },
 					currentDate = { value = now(), cfsqltype = "cf_sql_date" },
 					tefID = { value = newRecord.generated_key, cfsqltype = "cf_sql_integer" }
 				});
@@ -204,7 +204,7 @@ component extends="BaseHandler"{
 			changes = { value = serializeJSON(updatedRowDataObj), cfsqltype = "cf_sql_varchar" },
 			oldRowData = { value = rc.oldRowData, cfsqltype = "cf_sql_varchar" },
 			tefID = { value = deserializeJSON(rc.id), cfsqltype = "cf_sql_integer" },
-			userID = { value = 1, cfsqltype="cf_sql_integer"},
+			userID = { value = auth().getUserId(), cfsqltype="cf_sql_integer"},
 			currentDate = { value = now(), cfsqltype="cf_sql_date"}
 		});
     }
@@ -227,7 +227,7 @@ component extends="BaseHandler"{
 		",{
 			reciept = { value = rc.reciept, cfsqltype = "cf_sql_varchar" },
 			tefID = { value = deserializeJSON(rc.id), cfsqltype = "cf_sql_integer" },
-			userID = { value = 1, cfsqltype="cf_sql_integer"},
+			userID = { value = auth().getUserId(), cfsqltype="cf_sql_integer"},
 			currentDate = { value = now(), cfsqltype="cf_sql_date"},
 		});
 

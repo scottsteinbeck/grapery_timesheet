@@ -15,6 +15,7 @@ component extends="BaseHandler"{
 
 	function update( event, rc, prc ) {
 
+        // Restore a record
         switch(rc.clAction){
             case "edit":
                 var revertItems = deserializeJSON(rc.clOldData)
