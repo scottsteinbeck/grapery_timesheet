@@ -13,7 +13,7 @@ component extends="BaseHandler"{
 	function index( event, rc, prc ) {
 		// if(rc.keyExists("pq_filter")) {dump(rc.pq_filter); abort;}
 
-		selectItems = arrayMerge(getQueryColNames(), [
+		selectItems = arrayMerge(getQueryColNames(true), [
             "pSeason", "pLeader", "pAssistant", "pQC", "pFieldWorker",
 			
 			"vine_count",
@@ -80,7 +80,7 @@ component extends="BaseHandler"{
 	}
 
 	function create( event, rc, prc ) {
-		dump(rc); abort;
+		// dump(rc); abort;
 
 		if(rc.keyExists("copyReciept")) {
 			
@@ -171,23 +171,20 @@ component extends="BaseHandler"{
 	}
 
 	function update( event, rc, prc ) {
+		// dump(rc); abort;
 
 		var newRowDataObj = deserializeJSON(rc.newRowData);
 		var oldRowDataObj = deserializeJSON(rc.oldRowData);
 		var updatedRowDataObj = JSONDiff.diff(oldRowDataObj, newRowDataObj, ['pq_rowcls']);
 
-		var updateQry = [];
-		var updateDataQry = {rowIndex = { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" }};
-		// dump(rc.newRowData); abort;
-
 		// TIME_ENTRY_FORM_V2
-		var queryInfo = getQryInfo(getQueryColNames(), newRowDataObj, { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" });
+		var queryInfo = getQryInfo(getQueryColNames(false), newRowDataObj, { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" });
 		queryExecute("
 			UPDATE TIME_ENTRY_FORM_V2
 			SET " & queryInfo.string & "
 			WHERE Time_Entry_Form_ROW_INDEX = :whereItem
 		", queryInfo.data);
-
+		
 		// POLYFIELD
 		queryInfo = getQryInfo(getPolyfieldColNames(), newRowDataObj, { value = newRowDataObj.FieldCode, cfsqltype = "cf_sql_varchar"});
 		queryExecute("
