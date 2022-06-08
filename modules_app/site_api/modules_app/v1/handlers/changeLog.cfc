@@ -25,7 +25,7 @@ component extends="BaseHandler"{
                     timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer" }
                 }
         
-                for(col in getQueryColNames()){
+                for(col in getQueryColNames(false)){
                     if(revertItems.keyExists(col)){
                         if(revertItems[col] != ""){
                             setItems = setItems & col & ' = :' & col & ', ';
@@ -43,7 +43,7 @@ component extends="BaseHandler"{
                 ", params);
                 break;
 
-            case "add":
+            // case "add":
             case "copy":
                 queryExecute("
                     UPDATE TIME_ENTRY_FORM_V2

@@ -24,7 +24,7 @@ component extends="BaseHandler"{
 
 			"(vine_count / field_acres1) AS vines_per_acre",
 
-			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) AS total",
+			"(TimeDiff * pLeader) + (TimeDiff2nd * pAssistant) + (TimeDiff3rd * pAssistant) + (QC_Hours * pQC) AS total",
 
 			"(Totalvines / (vine_count / field_acres1)) AS vineacres",
 
@@ -32,7 +32,7 @@ component extends="BaseHandler"{
 			"HOUR(TotalCalculatedTime) / (Totalvines / (vine_count / field_acres1)) AS employeeAcresPerHr",
 
 			// total / vineacres = acresPerHour
-			"((HOUR(TotalCalculatedTime) * 14.25 + QC_Hours * 20.75) * 1.32) / (Totalvines / (vine_count / field_acres1)) AS acresPerHour",
+			"(TimeDiff * pLeader) + (TimeDiff2nd * pAssistant) + (TimeDiff3rd * pAssistant) + (QC_Hours * pQC) / (Totalvines / (vine_count / field_acres1)) AS acresPerHour",
 		]);
 
 		if(rc.keyExists("pq_sort")) {
@@ -80,21 +80,21 @@ component extends="BaseHandler"{
 	}
 
 	function create( event, rc, prc ) {
-		// dump(rc); abort;
 
+		// Code for copying ---------------------------------------
 		if(rc.keyExists("copyReciept")) {
 			
 			numberOfCopys = queryExecute("
 				SELECT COUNT(*) AS copys
 				FROM TIME_ENTRY_FORM_V2
-				WHERE RECIEPTNO like :copyReciept
+				WHERE RECIEPTNO like :copyReciept AND deleteDate IS NULL
 			",{
-				copyReciept = { value = rc.copyReciept & "_%", cfsqltype="cf_sql_string"}
+				copyReciept = { value = rc.copyReciept & "_%", cfsqltype="cf_sql_string" }
 			});
-
-			// dump(numberOfCopys); abort;
-
+			
 			var newRecieptName = rc.copyReciept & "_" & numberOfCopys.copys[1] + 1;
+			
+			// dump(newRecieptName); abort;
 
 			queryExecute("
 				INSERT INTO TIME_ENTRY_FORM_V2(Time_Entry_Form_ROW_INDEX, Date, JobCode, Crew, JobDescription, ContractorID, Contractor, FieldCode, Name, `In`, `Out`, ID, FirstName, LastName, ID1, Name1, In1, Out1, FirstName1, LastName1, ID2, Name2, In2, Out2, FirstName2, LastName2, Totalunits, Totalvines, StartTime, fulllunchstart, fulllunchstop, Stoptime, VerificationType, RECIEPTNO, QC_Name, QC_Hours, Unitcheck, Verification, ROW_INDEX, TotalCalculatedTime, TotalActualTime, ACTUALMINUTES, AdditionalCrewActual, QC_Average, BlockID, crewstartampm, FullStartTime, crewstopampm, Full_Stop_Time, Break1, Break2, Lunch_in, lunchinampm, Lunch_Out, lunchoutampm, vinecountcheck, Actual_Hours, TimeDiff, TimeDiff2nd, TimeDiff3rd, deleteDate) 
@@ -118,6 +118,7 @@ component extends="BaseHandler"{
 
 			return newRecieptName;
 		}
+		// Code for adding ---------------------------------------
 		else {
 
 			// dump(rc); abort;
@@ -128,7 +129,7 @@ component extends="BaseHandler"{
 
 			var index = 0;
 			for(data in newRowData){
-				if(getQueryColNames().find(data) && !isNull(newRowData[data]) && newRowData[data] != "" && newRowData[data] != "0"){
+				if(getQueryColNames(false).find(data) && !isNull(newRowData[data]) && newRowData[data] != "" && newRowData[data] != "0"){
 					index++;
 					newRowsToQry[data] = { value = newRowData[data] };
 					colNamesToQry[index] = data;
@@ -141,15 +142,15 @@ component extends="BaseHandler"{
 					VALUES (" & ':' & arrayToList(colNamesToQry, ', :') & ")
 				",newRowsToQry , { result="newRecord" });
 			
-				queryExecute("
-					INSERT INTO change_log(clAction, clUserID, clDate, clReciept, clTEFID)
-					VALUES('add', :userID, :currentDate, :reciept, :tefID)
-				",{
-					reciept = { value = deserializeJSON(rc.newRowData).RECIEPTNO, cfsqltype = "cf_sql_varchar" },
-					userID = { value = auth().getUserId(), cfsqltype = "cf_sql_integer" },
-					currentDate = { value = now(), cfsqltype = "cf_sql_date" },
-					tefID = { value = newRecord.generated_key, cfsqltype = "cf_sql_integer" }
-				});
+				// queryExecute("
+				// 	INSERT INTO change_log(clAction, clUserID, clDate, clReciept, clTEFID)
+				// 	VALUES('add', :userID, :currentDate, :reciept, :tefID)
+				// ",{
+				// 	reciept = { value = deserializeJSON(rc.newRowData).RECIEPTNO, cfsqltype = "cf_sql_varchar" },
+				// 	userID = { value = auth().getUserId(), cfsqltype = "cf_sql_integer" },
+				// 	currentDate = { value = now(), cfsqltype = "cf_sql_date" },
+				// 	tefID = { value = newRecord.generated_key, cfsqltype = "cf_sql_integer" }
+				// });
 			}
 		}
     }
@@ -177,21 +178,22 @@ component extends="BaseHandler"{
 		var oldRowDataObj = deserializeJSON(rc.oldRowData);
 		var updatedRowDataObj = JSONDiff.diff(oldRowDataObj, newRowDataObj, ['pq_rowcls']);
 
-		// TIME_ENTRY_FORM_V2
-		var queryInfo = getQryInfo(getQueryColNames(false), newRowDataObj, { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" });
+		var updateQry = [];
+		var updateDataQry = {tefRowIndex: { value = newRowDataObj.Time_Entry_Form_ROW_INDEX, cfsqltype = "cf_sql_varchar" }};
+
+		var index = 0;
+		for(col in getQueryColNames(false)){
+			if(newRowDataObj.keyExists(col)){
+				index++;
+				updateQry[index] = col & " = :" & col;
+				updateDataQry[col] = { value = newRowDataObj[col]};
+			}
+		}
 		queryExecute("
 			UPDATE TIME_ENTRY_FORM_V2
-			SET " & queryInfo.string & "
-			WHERE Time_Entry_Form_ROW_INDEX = :whereItem
-		", queryInfo.data);
-		
-		// POLYFIELD
-		queryInfo = getQryInfo(getPolyfieldColNames(), newRowDataObj, { value = newRowDataObj.FieldCode, cfsqltype = "cf_sql_varchar"});
-		queryExecute("
-			UPDATE POLYFIELD
-			SET " & queryInfo.string & "
-			WHERE field_name = :whereItem
-		", queryInfo.data);
+			SET " & arrayToList(updateQry, ',') & "
+			WHERE Time_Entry_Form_ROW_INDEX = :tefRowIndex
+		", updateDataQry);
 
 		queryExecute("
 			INSERT INTO change_log(clTEFID, clChanges, clOldRowData, clAction, clReciept, clUserID, clDate)

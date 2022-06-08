@@ -171,6 +171,7 @@
                                 var _self = this;
 
                                 var rowEditHtml = `
+                                <div class="overflow-auto container" style="max-height: 60vh">
                                     <div class="form-group">
                                         <label for="reciept">Reciept Number</label>
                                         <input class="form-control" type="text" id="reciept"></input>
@@ -207,13 +208,6 @@
                                     <br>
 
                                     <div class="form-group">
-                                        <label for='varietyName'>Variety Name</label>
-                                        <input type='text' id='varietyName' class="form-control">
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
                                         <label for='crewData'>Crew Date</label>
                                         <input type='date' id='crewData' class="form-control">
                                     </div>
@@ -242,7 +236,7 @@
                                     <br>
 
                                     <div class="form-group">
-                                        <label for='assistantHours'>Assistant Hours</label>
+                                        <label for='c'>Assistant Hours</label>
                                         <input type='number' id='assistantHours' class="form-control">
                                     </div>
 
@@ -273,6 +267,9 @@
                                         <label for='blockID'>BlockID</label>
                                         <input type='text' id='blockID' class="form-control">
                                     </div>
+
+                                    <br>
+                                </div>
                                 `;
 
                                 $('<div></div>').appendTo('body')
@@ -294,20 +291,33 @@
                                             click: function() {
                                             
                                                 var newRowData = {
-                                                    crew_info: crewByOid[$('#crew').val()],
+                                                    RECIEPTNO: $('#reciept').val(),
+                                                    Crew: $('#crew').val(),
                                                     FieldCode: $('#field').val(),
-                                                    Variety_name: $('#varietyName').val(),
                                                     Date: $('#crewData').val(),
                                                     QC_Average: $('#qcAverage').val(),
                                                     Totalvines: $('#totalVines').val(),
+                                                    TimeDiff2nd: $('#assistantHours').val(),
                                                     TimeDiff: $('#leaderHours').val(),
                                                     QC_Hours: $('#qcHours').val(),
                                                     description: jobcodesByJobcode[$('#jobcodes').val()],
-                                                    BlockID: $('#BlockID').val(),
-                                                    Crew: $('#crew').val(),
+                                                    BlockID: $('#blockID').val(),
                                                     JobCode: $('#jobcodes').val()
                                                 }
 
+                                                var rowIndx = 0;
+                                                _self.addRow({newRow: newRowData, rowIndx: rowIndx, checkEditable: false});
+                                                _self.options.pqIS.data[rowIndx+1] = calculateRow(_self.options.pqIS.data[rowIndx+1]);
+                                                console.log(calculateRow(_self.options.pqIS.data[rowIndx+1]));
+                                                _self.refreshRow({rowIndx: rowIndx});
+                                                rowData = _self.getRowData({ rowIndx: rowIndx });
+                                                
+                                                $.ajax({
+                                                    url: "api/v1/timeEntrys",
+                                                    method: "POST",
+                                                    data: {newRowData: JSON.stringify(rowData)},
+                                                });
+                                                
                                                 $( this ).dialog( "close" );
                                             }
                                         },
@@ -512,7 +522,10 @@
 
                                     const rowDt = Object.assign({}, ui.rowData);
 
+                                    // console.log(rowDt);
+
                                     var rowEditHtml = `
+                                    <div class="overflow-auto container" style="max-height: 60vh">
                                         <div class="form-group">
                                             <label for='crew'>Crew</label>
                                             <select id='crew' value="`+ rowDt.Crew + `" class="form-control">
@@ -542,50 +555,43 @@
                                         <br>
 
                                         <div class="form-group">
-                                            <label for='varietyName'>Variety Name</label>
-                                            <input type='text' id='varietyName' class="form-control">
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
                                             <label for='crewData'>Crew Date</label>
-                                            <input type='date' id='crewData' class="form-control">
+                                            <input type='date' id='crewData' class="form-control" value="`+ rowDt.Date +`">
                                         </div>
 
                                         <br>
 
                                         <div class="form-group">
                                             <label for='qcAverage'>Quality Score</label>
-                                            <input type='number' id='qcAverage' class="form-control">
+                                            <input type='number' id='qcAverage' class="form-control" value="`+ rowDt.QC_Average +`">
                                         </div>
 
                                         <br>
 
                                         <div class="form-group">
                                             <label for='totalVines'>Total Vines</label>
-                                            <input type='number' id='totalVines' class="form-control">
+                                            <input type='number' id='totalVines' class="form-control" value="`+ rowDt.Totalvines +`">
                                         </div>
 
                                         <br>
 
                                         <div class="form-group">
                                             <label for='leaderHours'>Leader Hours</label>
-                                            <input type='number' id='leaderHours' class="form-control">
+                                            <input type='number' id='leaderHours' class="form-control" value="`+ rowDt.TimeDiff +`">
                                         </div>
 
                                         <br>
 
                                         <div class="form-group">
                                             <label for='assistantHours'>Assistant Hours</label>
-                                            <input type='number' id='assistantHours' class="form-control">
+                                            <input type='number' id='assistantHours' class="form-control" value="`+ rowDt.TimeDiff2nd +`">
                                         </div>
 
                                         <br>
 
                                         <div class="form-group">
                                             <label for='qcHours'>QC_hours</label>
-                                            <input type='number' id='qcHours' class="form-control">
+                                            <input type='number' id='qcHours' class="form-control" value="`+ rowDt.QC_Hours +`">
                                         </div>
 
                                         <br>
@@ -608,6 +614,9 @@
                                             <label for='blockID'>BlockID</label>
                                             <input type='text' id='blockID' value='`+ rowDt.BlockID +`' class="form-control">
                                         </div>
+
+                                        <br>
+                                    </div>
                                     `;
 
                                     $('<div></div>').appendTo('body')
@@ -631,14 +640,14 @@
                                                     var newRowData = {
                                                         crew_info: crewByOid[$('#crew').val()],
                                                         FieldCode: $('#field').val(),
-                                                        Variety_name: $('#varietyName').val(),
                                                         Date: $('#crewData').val(),
                                                         QC_Average: $('#qcAverage').val(),
                                                         Totalvines: $('#totalVines').val(),
+                                                        TimeDiff2nd: $('#assistantHours').val(),
                                                         TimeDiff: $('#leaderHours').val(),
                                                         QC_Hours: $('#qcHours').val(),
                                                         description: jobcodesByJobcode[$('#jobcodes').val()],
-                                                        BlockID: $('#BlockID').val(),
+                                                        BlockID: $('#blockID').val(),
                                                     }
                                                     ui.rowData.Crew = $('#crew').val();
                                                     ui.rowData.JobCode = $('#jobcodes').val();
@@ -668,7 +677,7 @@
                         }
                     },
 
-                    { title: "Reciept Number", width: 100, dataIndx: "RECIEPTNO", datatype: "string", editable: false, 
+                    { title: "Reciept Number", width: 120, dataIndx: "RECIEPTNO", datatype: "string", editable: false, 
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
                     { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", editable: false,
@@ -677,7 +686,7 @@
 
                     // { dataIndx: "Crew", hidden:true, dataType: "integer" },
 
-                    { title:'Field Vines per Acre', width: 120, editable: false, dataIndx: "vines_per_acre", dataType: "float",
+                    { title:'Field Vines per Acre', width: 135, editable: false, dataIndx: "vines_per_acre", dataType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
                     { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", editable: false,
@@ -698,7 +707,7 @@
                     { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Field Total Vines", width: 100, dataIndx: "vine_count", dataType: "integer", editable: false,
+                    { title: "Field Total Vines", width: 115, dataIndx: "vine_count", dataType: "integer", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
                     { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "string", editable: false,
@@ -732,13 +741,13 @@
                     { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }}, 
 
-                    {title: 'Assistant Hours', width: 100, dataIndx: "TimeDiff2nd", dataType: "string", editable: false,
+                    {title: 'Assistant Hours', width: 110, dataIndx: "TimeDiff2nd", dataType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                     
                     { title: "QC_Hours", width: 100, dataIndx: "QC_Hours", dateType: "float", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
-                    {title: 'Employee Hours', width:100, dataIndx: "employeeHours", editable: false, dateType: "integer",
+                    {title: 'Employee Hours', width:115, dataIndx: "employeeHours", editable: false, dateType: "integer",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Total Cost", width: 100, dataIndx: "total", editable: false, dateType: "float",
@@ -747,20 +756,20 @@
                     { title: "Jobcode", width: 200, dataIndx: "description", dateType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "integer", editable: false,
+                    { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Leader Payrates", width: 100, dataIndx: "pLeader", dataType: "integer", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+                    // { title: "Leader Payrates", width: 115, dataIndx: "pLeader", dataType: "integer", editable: false,
+                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Assistant Payrates", width: 150, dataIndx: "pAssistant", dataType: "integer", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+                    // { title: "Assistant Payrates", width: 150, dataIndx: "pAssistant", dataType: "integer", editable: false,
+                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "QC Payrates", width: 100, dataIndx: "pQC", dataType: "integer", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+                    // { title: "QC Payrates", width: 100, dataIndx: "pQC", dataType: "integer", editable: false,
+                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
 
-                    { title: "Field Worker Payrates", width: 250, dataIndx: "pFieldWorker", dataType: "integer", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+                    // { title: "Field Worker Payrates", width: 150, dataIndx: "pFieldWorker", dataType: "integer", editable: false,
+                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
                 ],
             };
 
