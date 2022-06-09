@@ -39,7 +39,7 @@ component extends="coldbox.system.EventHandler" {
 	 * Default Action
 	*/
 	function index( event, rc, prc ) {
-		prc.welcomeMessage = "Welcome to ColdBox!";
+		// prc.welcomeMessage = "Welcome to ColdBox!";
 		event.setView( "main/index" );
 
 		prc.jobcodes = queryExecute("
@@ -62,17 +62,20 @@ component extends="coldbox.system.EventHandler" {
 			SELECT
 			CREW.CrewName,
 			CREW.CrewLead,
-			CREW.CrewNumber
+			CREW.CrewNumber,
+			CONTRACTOR.contractor_name
 			FROM CREW
+			LEFT JOIN CONTRACTOR ON CONTRACTOR.GlobalID = CREW.ContractorID
 			WHERE CREW.GDB_TO_DATE = '9999-12-31 23:59:59.000'
 			ORDER BY CrewLead
 		",{},{ returnType = 'array'});
 
 		prc.duplicateRecords = queryExecute("
-		SELECT Crew, FieldCode, JobCode, RECIEPTNO, `Date`, COUNT(*) AS numberOfDuplicates
-		FROM TIME_ENTRY_FORM_V2
-		GROUP BY Crew, FieldCode, JobCode, RECIEPTNO, `Date`
-		HAVING COUNT(*) > 2
+			SELECT Crew, FieldCode, JobCode, RECIEPTNO, `Date`, COUNT(*) AS numberOfDuplicates
+			FROM TIME_ENTRY_FORM_V2
+			WHERE deleteDate IS NULL
+			GROUP BY Crew, FieldCode, JobCode, RECIEPTNO, `Date`
+			HAVING COUNT(*) > 2
 		",{ },{ returnType: "array" });
 	}
 

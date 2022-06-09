@@ -1,7 +1,7 @@
 component {
 
 	any function index( event, rc, prc ) {
-		relocate( "Manage.StaffList" );
+		relocate( "Admin.StaffList" );
 	}
 
 	/**

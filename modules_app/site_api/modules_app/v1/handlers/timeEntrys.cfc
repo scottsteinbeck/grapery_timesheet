@@ -13,12 +13,16 @@ component extends="BaseHandler"{
 	function index( event, rc, prc ) {
 		// if(rc.keyExists("pq_filter")) {dump(rc.pq_filter); abort;}
 
+		// if(isNull(pq_curpage)) var pq_curpage = 1;
+		// if(isNull(rc.pq_rpp)) rc.pq_rpp = 1;
+
 		selectItems = arrayMerge(getQueryColNames(true), [
             "pSeason", "pLeader", "pAssistant", "pQC", "pFieldWorker",
 			
 			"vine_count",
 			"Variety_name",
 			"description",
+			"contractor_name",
 
 			"HOUR(TotalCalculatedTime) AS employeeHours",
 
@@ -59,6 +63,10 @@ component extends="BaseHandler"{
 			.leftJoin('POLYFIELD', function(j){
 				j.on('TIME_ENTRY_FORM_V2.FieldCode' , '=', 'POLYFIELD.field_name');
 				j.where('POLYFIELD.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_VARCHAR"});
+			})
+			.leftJoin('CONTRACTOR', function(j) {
+				j.on('CONTRACTOR.GlobalID', '=', 'CREW.ContractorID');
+				// j.where('CONTRACTOR.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_TIMESTAMP"});
 			})
 			.leftJoin('payrates', (j) => {
 				j.on('payrates.pSeason', j.raw('YEAR(Date)'));
@@ -141,17 +149,9 @@ component extends="BaseHandler"{
 					INSERT INTO TIME_ENTRY_FORM_V2 (" & arrayToList(colNamesToQry, ',') & ")
 					VALUES (" & ':' & arrayToList(colNamesToQry, ', :') & ")
 				",newRowsToQry , { result="newRecord" });
-			
-				// queryExecute("
-				// 	INSERT INTO change_log(clAction, clUserID, clDate, clReciept, clTEFID)
-				// 	VALUES('add', :userID, :currentDate, :reciept, :tefID)
-				// ",{
-				// 	reciept = { value = deserializeJSON(rc.newRowData).RECIEPTNO, cfsqltype = "cf_sql_varchar" },
-				// 	userID = { value = auth().getUserId(), cfsqltype = "cf_sql_integer" },
-				// 	currentDate = { value = now(), cfsqltype = "cf_sql_date" },
-				// 	tefID = { value = newRecord.generated_key, cfsqltype = "cf_sql_integer" }
-				// });
 			}
+
+			return newRecord.generated_key;
 		}
     }
 

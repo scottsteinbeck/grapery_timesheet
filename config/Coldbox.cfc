@@ -160,7 +160,7 @@ component {
 				"rules": [
 					{
 						"whitelist": "Auth",
-						"securelist": "main",
+						"securelist": "main, Admin",
 						"match": "event",
 						"roles": "admin",
 						"permissions": "",

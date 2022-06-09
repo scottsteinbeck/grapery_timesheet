@@ -13,6 +13,104 @@
     <cfoutput>crew = #serializeJSON(prc.crew)#</cfoutput>
     <cfoutput>duplicates = #serializeJSON(prc.duplicateRecords)#</cfoutput>
 
+    function editAddBtnHtml(rowDt) {
+
+        var addHtml = `<div class="form-group">
+                            <label for="reciept">Reciept Number</label>
+                            <input class="form-control" type="text" id="reciept"></input>
+                        </div>
+                        <br>
+                        `
+        
+        return `<div class="overflow-auto container" style="max-height: 60vh">
+                `+ ((rowDt) ? '' : addHtml) +`
+                <div class='row'>
+                    <div class="form-group col-6">
+                        <label for='crew'>Crew</label>
+                        <select id='crew' value="`+ rowDt?.Crew + `" class="form-control">
+                            ` + crew.reduce(function(acc, x){
+                                var opiningOptionTag = "<option" +( (x.CrewNumber == rowDt?.Crew) ? " selected = selected " : "" )+ " value='"+ x.CrewNumber +"'>";
+                                var closingOptionTag = "</option>";
+                                acc += opiningOptionTag + x.CrewLead + closingOptionTag;
+                                return acc;
+                            }, "") + `
+                        </select>
+                    </div>
+                
+                    <div class="form-group col-6">
+                        <label for="field">Field</label>
+                        <select id="field" class="form-control">
+                            ` + polyfield.reduce(function(acc, x){
+                                var opiningOptionTag = "<option" +( (x.field_name == rowDt?.FieldCode) ? " selected = selected " : "" )+ ">";
+                                var closingOptionTag = "</option>";
+                                acc += opiningOptionTag + x.field_name + closingOptionTag;
+                                return acc;
+                            }, "") + `
+                        </select>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class='row'>
+                    <div class="form-group col-6">
+                        <label for='crewData'>Crew Date</label>
+                        <input type='date' id='crewData' class="form-control" value="`+ rowDt?.Date +`">
+                    </div>
+
+                    <div class="form-group col-6">
+                        <label for='qcAverage'>Quality Score</label>
+                        <input type='number' id='qcAverage' class="form-control" value="`+ rowDt?.QC_Average +`">
+                    </div>
+                </div>
+
+                <br>
+
+                <div class='row'>
+                    <div class="form-group col-6">
+                        <label for='totalVines'>Total Vines</label>
+                        <input type='number' id='totalVines' class="form-control" value="`+ rowDt?.Totalvines +`">
+                    </div>
+
+                    <div class="form-group col-6">
+                        <label for='leaderHours'>Leader Hours</label>
+                        <input type='number' id='leaderHours' class="form-control" value="`+ rowDt?.TimeDiff +`">
+                    </div>
+                </div>
+
+                <br>
+
+                <div class='row'>
+                    <div class="form-group col-6">
+                        <label for='assistantHours'>Assistant Hours</label>
+                        <input type='number' id='assistantHours' class="form-control" value="`+ rowDt?.TimeDiff2nd +`">
+                    </div>
+
+                    <div class="form-group col-6">
+                        <label for='qcHours'>Inspector Hours</label>
+                        <input type='number' id='qcHours' class="form-control" value="`+ rowDt?.QC_Hours +`">
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="form-group">
+                    <label for="jobcodes">Jobcode Name</label>
+                    <select id="jobcodes" class="form-control">
+                        ` + jobcodes.reduce(function(acc, x){
+                            var opiningOptionTag = "<option" +( (x.jobcode == rowDt?.JobCode) ? " selected = selected " : "" )+ " value='"+ x.jobcode +"'>";
+                            var closingOptionTag = "</option>";
+                            acc += opiningOptionTag + x.description + closingOptionTag;
+                            return acc;
+                        }) + `
+                    </select>
+                </div>
+
+                <br>
+            </div>
+        `;
+    }
+
     var duplicates = duplicates.reduce(function(acc,x){
         acc[x.RECIEPTNO] = x.numberOfDuplicates;
         return acc;
@@ -47,18 +145,11 @@
 
     var calculateRow = function(rowData) {
 
-        // rowData.jobcode_info = jobcodesByJobcode[rowData.JobCode];
-
         rowData.polyfield = polyfieldByFieldName[rowData.FieldCode]?.displayName;
         rowData.vine_count = polyfieldByFieldName[rowData.FieldCode]?.vine_count;
         rowData.field_acres1 = polyfieldByFieldName[rowData.FieldCode]?.field_acres1;
 
         rowData.crew_info = crewByOid[rowData.Crew];
-
-        // if(rowData.Date != ""){
-        //     var date = new Date(rowData.Date);
-        //     rowData.Date = ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1))) + '/' + ((date.getDate() > 9) ? date.getDate() : ('0' + date.getDate())) + '/' + date.getFullYear();
-        // }
 
         if(rowData.BlockID == undefined) rowData.BlockID = "";
 
@@ -66,6 +157,7 @@
         if( !isNaN(rowData.vine_count) && !isNaN(parseFloat(rowData.field_acres1))){
             rowData.vines_per_acre = numberFormat(rowData.vine_count / parseFloat(rowData.field_acres1));
         }
+
         rowData.employeeHours = 0;
         rowData.LeaderHours = 0;
         rowData.AssistantHours = 0;
@@ -74,17 +166,18 @@
         } else {
             rowData.QC_Hours = 0;
         }
+
+        if(!rowData.TotalCalculatedTime){
+            rowData.TotalCalculatedTime = rowData.TimeDiff + rowData.TimeDiff2nd + rowData.TimeDiff3rd;
+        }
+
         if( new Date(rowData.TotalCalculatedTime) != 'Invalid Date'){
             rowData.employeeHours = new Date(rowData.TotalCalculatedTime).getHours();
         } else if( !isNaN(rowData.TotalCalculatedTime)){
             rowData.employeeHours = parseFloat(rowData.TotalCalculatedTime);
         }
-        rowData.total = numberFormat((
-            (rowData.employeeHours*14.25)
-            +(rowData.LeaderHours*18.6)
-            +(rowData.AssistantHours*16.8)
-            +(rowData.QC_Hours*20.75)
-        )*1.32);
+
+        rowData.total = (rowData.total) ? numberFormat(rowData.total) : 0
 
         rowData.vineacres = 0;
         if( rowData.vines_per_acre && !isNaN(parseFloat(rowData.Totalvines))){
@@ -170,110 +263,8 @@
                             listener: function () {
                                 var _self = this;
 
-                                var rowEditHtml = `
-                                <div class="overflow-auto container" style="max-height: 60vh">
-                                    <div class="form-group">
-                                        <label for="reciept">Reciept Number</label>
-                                        <input class="form-control" type="text" id="reciept"></input>
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for='crew'>Crew</label>
-                                        <select id='crew' class="form-control">
-                                            ` + crew.reduce(function(acc, x){
-                                                var opiningOptionTag = "<option value='"+ x.CrewNumber +"'>";
-                                                var closingOptionTag = "</option>";
-                                                acc += opiningOptionTag + x.CrewLead + closingOptionTag;
-                                                return acc;
-                                            }, "") + `
-                                        </select>
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for="field">Field</label>
-                                        <select id="field" class="form-control">
-                                            ` + polyfield.reduce(function(acc, x){
-                                                var opiningOptionTag = "<option>";
-                                                var closingOptionTag = "</option>";
-                                                acc += opiningOptionTag + x.field_name + closingOptionTag;
-                                                return acc;
-                                            }, "") + `
-                                        </select>
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for='crewData'>Crew Date</label>
-                                        <input type='date' id='crewData' class="form-control">
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for='qcAverage'>Quality Score</label>
-                                        <input type='number' id='qcAverage' class="form-control">
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for='totalVines'>Total Vines</label>
-                                        <input type='number' id='totalVines' class="form-control">
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for='leaderHours'>Leader Hours</label>
-                                        <input type='number' id='leaderHours' class="form-control">
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for='c'>Assistant Hours</label>
-                                        <input type='number' id='assistantHours' class="form-control">
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for='qcHours'>QC_hours</label>
-                                        <input type='number' id='qcHours' class="form-control">
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for="jobcodes">Jobcode</label>
-                                        <select id="jobcodes" class="form-control">
-                                            ` + jobcodes.reduce(function(acc, x){
-                                                var opiningOptionTag = "<option value='"+ x.jobcode +"'>";
-                                                var closingOptionTag = "</option>";
-                                                acc += opiningOptionTag + x.description + closingOptionTag;
-                                                return acc;
-                                            }) + `
-                                        </select>
-                                    </div>
-
-                                    <br>
-
-                                    <div class="form-group">
-                                        <label for='blockID'>BlockID</label>
-                                        <input type='text' id='blockID' class="form-control">
-                                    </div>
-
-                                    <br>
-                                </div>
-                                `;
-
                                 $('<div></div>').appendTo('body')
-                                .html(rowEditHtml)
+                                .html(editAddBtnHtml(undefined))
                                 .dialog({
                                     modal: true,
                                     title: 'Edit row',
@@ -306,9 +297,7 @@
                                                 }
 
                                                 var rowIndx = 0;
-                                                _self.addRow({newRow: newRowData, rowIndx: rowIndx, checkEditable: false});
-                                                _self.options.pqIS.data[rowIndx+1] = calculateRow(_self.options.pqIS.data[rowIndx+1]);
-                                                console.log(calculateRow(_self.options.pqIS.data[rowIndx+1]));
+                                                _self.addRow({newRow: calculateRow(newRowData), rowIndx: rowIndx, checkEditable: false});
                                                 _self.refreshRow({rowIndx: rowIndx});
                                                 rowData = _self.getRowData({ rowIndx: rowIndx });
                                                 
@@ -316,6 +305,9 @@
                                                     url: "api/v1/timeEntrys",
                                                     method: "POST",
                                                     data: {newRowData: JSON.stringify(rowData)},
+                                                    success: function(data){
+                                                        _self.getRowData({ rowIndx: rowIndx }).Time_Entry_Form_ROW_INDEX = data;
+                                                    }
                                                 });
                                                 
                                                 $( this ).dialog( "close" );
@@ -520,107 +512,8 @@
                                 // Edit button ---------------------------------------
                                 cell.find(".edit_btn").bind("click", function(evt){
 
-                                    const rowDt = Object.assign({}, ui.rowData);
-
-                                    // console.log(rowDt);
-
-                                    var rowEditHtml = `
-                                    <div class="overflow-auto container" style="max-height: 60vh">
-                                        <div class="form-group">
-                                            <label for='crew'>Crew</label>
-                                            <select id='crew' value="`+ rowDt.Crew + `" class="form-control">
-                                                ` + crew.reduce(function(acc, x){
-                                                    var opiningOptionTag = "<option" +( (x.CrewNumber == rowDt.Crew) ? " selected = selected " : "" )+ " value='"+ x.CrewNumber +"'>";
-                                                    var closingOptionTag = "</option>";
-                                                    acc += opiningOptionTag + x.CrewLead + closingOptionTag;
-                                                    return acc;
-                                                }, "") + `
-                                            </select>
-                                        </div>
-
-                                        <br>
-                                    
-                                        <div class="form-group">
-                                            <label for="field">Field</label>
-                                            <select id="field" class="form-control">
-                                                ` + polyfield.reduce(function(acc, x){
-                                                    var opiningOptionTag = "<option" +( (x.field_name == rowDt.FieldCode) ? " selected = selected " : "" )+ ">";
-                                                    var closingOptionTag = "</option>";
-                                                    acc += opiningOptionTag + x.field_name + closingOptionTag;
-                                                    return acc;
-                                                }, "") + `
-                                            </select>
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
-                                            <label for='crewData'>Crew Date</label>
-                                            <input type='date' id='crewData' class="form-control" value="`+ rowDt.Date +`">
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
-                                            <label for='qcAverage'>Quality Score</label>
-                                            <input type='number' id='qcAverage' class="form-control" value="`+ rowDt.QC_Average +`">
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
-                                            <label for='totalVines'>Total Vines</label>
-                                            <input type='number' id='totalVines' class="form-control" value="`+ rowDt.Totalvines +`">
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
-                                            <label for='leaderHours'>Leader Hours</label>
-                                            <input type='number' id='leaderHours' class="form-control" value="`+ rowDt.TimeDiff +`">
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
-                                            <label for='assistantHours'>Assistant Hours</label>
-                                            <input type='number' id='assistantHours' class="form-control" value="`+ rowDt.TimeDiff2nd +`">
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
-                                            <label for='qcHours'>QC_hours</label>
-                                            <input type='number' id='qcHours' class="form-control" value="`+ rowDt.QC_Hours +`">
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
-                                            <label for="jobcodes">Jobcode</label>
-                                            <select id="jobcodes" class="form-control">
-                                                ` + jobcodes.reduce(function(acc, x){
-                                                    var opiningOptionTag = "<option" +( (x.jobcode == rowDt.JobCode) ? " selected = selected " : "" )+ " value='"+ x.jobcode +"'>";
-                                                    var closingOptionTag = "</option>";
-                                                    acc += opiningOptionTag + x.description + closingOptionTag;
-                                                    return acc;
-                                                }) + `
-                                            </select>
-                                        </div>
-
-                                        <br>
-
-                                        <div class="form-group">
-                                            <label for='blockID'>BlockID</label>
-                                            <input type='text' id='blockID' value='`+ rowDt.BlockID +`' class="form-control">
-                                        </div>
-
-                                        <br>
-                                    </div>
-                                    `;
-
                                     $('<div></div>').appendTo('body')
-                                    .html(rowEditHtml)
+                                    .html(editAddBtnHtml(ui.rowData))
                                     .dialog({
                                         modal: true,
                                         title: 'Edit row',
@@ -647,14 +540,13 @@
                                                         TimeDiff: $('#leaderHours').val(),
                                                         QC_Hours: $('#qcHours').val(),
                                                         description: jobcodesByJobcode[$('#jobcodes').val()],
-                                                        BlockID: $('#blockID').val(),
                                                     }
                                                     ui.rowData.Crew = $('#crew').val();
                                                     ui.rowData.JobCode = $('#jobcodes').val();
                                                     
                                                     _self.updateRow({rowIndx: ui.rowIndx, newRow: newRowData, checkEditable: false});
                                                     
-                                                    app.options.update(ui.rowIndx, _self, rowDt);
+                                                    app.options.update(ui.rowIndx, _self, ui.rowData);
 
                                                     $( this ).dialog( "close" );
                                                 }
@@ -677,12 +569,21 @@
                         }
                     },
 
-                    { title: "Reciept Number", width: 120, dataIndx: "RECIEPTNO", datatype: "string", editable: false, 
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+                    { title: "Contractor Name", width: 120, dataIndx: "contractor_name", dataType: "string",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
+                    },
+
+                    { title: "Crew Code", width: 120, dataIndx: "Crew", dataType: "string",
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
+                    },
 
                     { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
                     },
+
+                    // { title: "Reciept Number", width: 120, dataIndx: "RECIEPTNO", datatype: "string", editable: false, 
+                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
+                    // },
 
                     // { dataIndx: "Crew", hidden:true, dataType: "integer" },
 
@@ -708,6 +609,12 @@
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
                     { title: "Field Total Vines", width: 115, dataIndx: "vine_count", dataType: "integer", editable: false,
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+
+                    { title: "Operation", width: 115, dataIndx: "JobCode", dataType: "integer", editable: false,
+                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+
+                    { title: "Operation Name", width: 150, dataIndx: "description", dateType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
                     { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "string", editable: false,
@@ -744,7 +651,7 @@
                     {title: 'Assistant Hours', width: 110, dataIndx: "TimeDiff2nd", dataType: "string", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                     
-                    { title: "QC_Hours", width: 100, dataIndx: "QC_Hours", dateType: "float", editable: false,
+                    { title: "Inspector Hours", width: 120, dataIndx: "QC_Hours", dateType: "float", editable: false,
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
                         
                     {title: 'Employee Hours', width:115, dataIndx: "employeeHours", editable: false, dateType: "integer",
@@ -753,22 +660,7 @@
                     { title: "Total Cost", width: 100, dataIndx: "total", editable: false, dateType: "float",
                         filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
 
-                    { title: "Jobcode", width: 200, dataIndx: "description", dateType: "string", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
-
-                    { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "string", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
-
-                    // { title: "Leader Payrates", width: 115, dataIndx: "pLeader", dataType: "integer", editable: false,
-                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
-
-                    // { title: "Assistant Payrates", width: 150, dataIndx: "pAssistant", dataType: "integer", editable: false,
-                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
-
-                    // { title: "QC Payrates", width: 100, dataIndx: "pQC", dataType: "integer", editable: false,
-                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
-
-                    // { title: "Field Worker Payrates", width: 150, dataIndx: "pFieldWorker", dataType: "integer", editable: false,
+                    // { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "string", editable: false,
                     //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
                 ],
             };
