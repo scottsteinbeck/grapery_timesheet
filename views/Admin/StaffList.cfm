@@ -23,7 +23,7 @@
 								</b-form-group>
 							</b-col>
 							<b-col>
-								<b-button @click="editUser({})" variant="primary"> <i class="fas fa-user-plus"></i> Add User</b-button>
+								<b-button @click="editUser({})" variant="primary"> <i class="bi bi-person-plus-fill"></i> Add User</b-button>
 							</b-col>
 							<b-col cols="6">
 								<b-pagination
@@ -50,7 +50,7 @@
 						>
 							<template v-slot:cell(actions)="data">
 								<button size="sm" class="btn btn-primary" @click="editUser(data.item)">
-									<i class="fas fa-user-edit"></i>
+									<i class="bi bi-pencil"></i>
 								</button>
 								<!-- <button size="sm" class="btn btn-danger" @click="deleteConfirm(data.item)">
 									<i class="fas fa-trash-alt"></i>
@@ -74,7 +74,7 @@
 		<b-modal id="editUserDialog" ref="modal" title="Add/Update User Information" @hidden="resetModal" @ok="handleOk">
 			<form ref="form" @submit.stop.prevent="handleSubmit">
 				<b-form-group label-cols-sm="4" label-cols-lg="3" label="Type" label-for="first-name-input" invalid-feedback="First Name is required">
-					<b-form-select v-model="$v.form.role.$model" :state="validateState('role')" :options="roles"></b-form-select>
+					<b-form-select class="form-control" v-model="$v.form.role.$model" :state="validateState('role')" :options="roles"></b-form-select>
 				</b-form-group>
 
 				<b-form-group label-cols-sm="4" label-cols-lg="3" label="Username" label-for="username-input" invalid-feedback="Username is required">

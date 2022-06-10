@@ -1,6 +1,18 @@
 <!--- <cfdump var="#prc.data#"> --->
 <div id="app">
 
+    <div v-if="filterWarning != ''" class="bg-warning m-2 p-2">{{filterWarning}}</div>
+
+    <div class="row">
+        <select class="form-control col-3 m-2" id="filterCol">
+            <option :selected="col.title == 'Field'" v-for="col in options.colModel" v-if="col.title != 'Edit'" :value="col.dataIndx">{{col.title}}</option>
+        </select>
+        
+        <input type="text" class="form-control col-3 m-2" id="filterData">
+        
+        <button class="btn btn-success col-2 m-2" @click="refreshView()">Filter</button>
+    </div>
+
     <div style="height: calc(100vh - 115px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
     </div>
@@ -224,10 +236,18 @@
             onExport: function() {
                 debugger;
                 this.$refs.grid.export();
+            },
+            refreshView: function() {
+                this.$refs.grid.grid.options.pqIS.data = [];
+                this.$refs.grid.grid.refreshDataAndView();
+
+                if( $('#filterData').val() == '') this.filterWarning = "Must enter a value to filter by!";
             }
         },
 
         data: function() {
+
+            this.filterWarning = '';
 
             this.options = {
 
@@ -245,8 +265,8 @@
                 postRenderInterval: -1,
                 virtualX: true, virtualY: true,
                 selectionModel: { type: null },
-                
-                filterModel: { on: true, header: true, type: 'remote' },
+
+                filterModel: { on: true, header: false, type: 'remote' },
                 sortModel: { type: 'remote', sorter: [{ dataIndx: 'Date', dir: 'up' }, { dataIndx: 'RECIEPTNO', dir: 'up' }] },
                 beforeSort: function (evt) {
                     if (evt.originalEvent) {//only if sorting done through header cell click.
@@ -267,7 +287,7 @@
                                 .html(editAddBtnHtml(undefined))
                                 .dialog({
                                     modal: true,
-                                    title: 'Edit row',
+                                    title: 'Add row',
                                     zIndex: 10000,
                                     classes:{
                                         'ui-dialog-titlebar-close': 'ui-button ui-corner-all ui-widget ui-button-icon-only'
@@ -397,7 +417,9 @@
                     postData: function () {
                         return {
                             pq_curpage: this.options.pqIS.requestPage,
-                            pq_rpp: this.options.pqIS.rpp
+                            pq_rpp: this.options.pqIS.rpp,
+                            filterCol: $('#filterCol').val(),
+                            filterData: $('#filterData').val(),
                         };
                     },
                     getData: function (response) {
@@ -437,6 +459,8 @@
                         postRender: function(ui) {
                             var _self = this;
                             var cell = _self.getCell(ui);
+
+                            // console.log(_self.options.pqIS.data);
 
                             if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length){
                                 
@@ -569,104 +593,74 @@
                         }
                     },
 
-                    { title: "Contractor Name", width: 120, dataIndx: "contractor_name", dataType: "string",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
-                    },
+                    { title: "Contractor Name", width: 120, dataIndx: "contractor_name", dataType: "string" },
 
-                    { title: "Crew Code", width: 120, dataIndx: "Crew", dataType: "string",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
-                    },
+                    { title: "Crew Code", width: 120, dataIndx: "Crew", dataType: "string" },
 
-                    { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
-                    },
+                    { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", editable: false },
 
-                    // { title: "Reciept Number", width: 120, dataIndx: "RECIEPTNO", datatype: "string", editable: false, 
-                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }
-                    // },
-
-                    // { dataIndx: "Crew", hidden:true, dataType: "integer" },
-
-                    { title:'Field Vines per Acre', width: 135, editable: false, dataIndx: "vines_per_acre", dataType: "float",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+                    { title:'Field Vines per Acre', width: 135, editable: false, dataIndx: "vines_per_acre", dataType: "float" },
 
                     { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", editable: false,
-                        filter: { condition: 'begin', listeners: [{'change' : function(evt, item){
-                            var grid = $(this).closest(".pq-grid");
-                            // grid.pqGrid( { dataModel: { data: grid.pqGrid("option").pqIS.data } });
+                        // filter: { condition: 'begin', listeners: [{'change' : function(evt, item){
+                        //     var grid = $(this).closest(".pq-grid");
+                        //     // grid.pqGrid( { dataModel: { data: grid.pqGrid("option").pqIS.data } });
 
-                            grid.pqGrid('filter', {
-                                oper: 'replace',
-                                data: [{dataIndx: item.dataIndx, value: item.value}]
-                            });
-                        }}], type: 'textbox', value: "", on: true }
+                        //     grid.pqGrid('filter', {
+                        //         oper: 'replace',
+                        //         data: [{dataIndx: item.dataIndx, value: item.value}]
+                        //     });
+                        // }}], type: 'textbox', value: "", on: true }
                     },
 
-                    { title: "Total Acres", width: 100, dataIndx: "field_acres1", dataType: "float", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Total Acres", width: 100, dataIndx: "field_acres1", dataType: "float", editable: false },
 
-                    { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string", editable: false },
 
-                    { title: "Field Total Vines", width: 115, dataIndx: "vine_count", dataType: "integer", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Field Total Vines", width: 115, dataIndx: "vine_count", dataType: "integer", editable: false },
 
-                    { title: "Operation", width: 115, dataIndx: "JobCode", dataType: "integer", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Operation", width: 115, dataIndx: "JobCode", dataType: "integer", editable: false },
 
-                    { title: "Operation Name", width: 150, dataIndx: "description", dateType: "string", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Operation Name", width: 150, dataIndx: "description", dateType: "string", editable: false },
                         
                     { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "string", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] },
-                        render: function(ui){
-                            var curDate = new Date();
-                            var dataIdxDate = new Date(ui.rowData.Date);
+                        // filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] },
+                        // render: function(ui){
+                        //     var curDate = new Date();
+                        //     var dataIdxDate = new Date(ui.rowData.Date);
 
-                            if(dataIdxDate > curDate){
-                                return { cls: 'futer_date_error' };
-                            }
-                            return {};
-                        }
+                        //     if(dataIdxDate > curDate){
+                        //         return { cls: 'futer_date_error' };
+                        //     }
+                        //     return {};
+                        // }
                     },
 
-                    { title: "Cost / Acre Actual", width: 150, editable: false, dataIndx: "acresPerHour", dataType: "float",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Cost / Acre Actual", width: 150, editable: false, dataIndx: "acresPerHour", dataType: "float" },
 
-                    { title: "Man Hr / Acre Actual", width: 150, editable: false, dataIndx: "employeeAcresPerHr", dataType: "float",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Man Hr / Acre Actual", width: 150, editable: false, dataIndx: "employeeAcresPerHr", dataType: "float" },
 
-                    { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float", editable: false },
 
-                    { title: "Total Vines", width: 100, dataIndx: "Totalvines", dateType: "integer", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Total Vines", width: 100, dataIndx: "Totalvines", dateType: "integer", editable: false },
 
-                    { title: "Acres", width: 100, dataIndx: "vineacres", dateType: "float", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Acres", width: 100, dataIndx: "vineacres", dateType: "float", editable: false },
 
-                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }}, 
+                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string", editable: false }, 
 
-                    {title: 'Assistant Hours', width: 110, dataIndx: "TimeDiff2nd", dataType: "string", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    {title: 'Assistant Hours', width: 110, dataIndx: "TimeDiff2nd", dataType: "string", editable: false },
                     
-                    { title: "Inspector Hours", width: 120, dataIndx: "QC_Hours", dateType: "float", editable: false,
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    { title: "Inspector Hours", width: 120, dataIndx: "QC_Hours", dateType: "float", editable: false },
                         
-                    {title: 'Employee Hours', width:115, dataIndx: "employeeHours", editable: false, dateType: "integer",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
+                    {title: 'Employee Hours', width:115, dataIndx: "employeeHours", editable: false, dateType: "integer" },
 
-                    { title: "Total Cost", width: 100, dataIndx: "total", editable: false, dateType: "float",
-                        filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] }},
-
-                    // { title: "BlockID", width: 100, dataIndx: "BlockID", dataType: "string", editable: false,
-                    //     filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] } },
+                    { title: "Total Cost", width: 100, dataIndx: "total", editable: false, dateType: "float" }
                 ],
             };
 
             return {
                 rowIndex: -1,
+                filterWarning: this.filterWarning,
             };
         }
     });

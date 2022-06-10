@@ -32,10 +32,10 @@ component extends="BaseHandler" {
 			.where("role",3)
 			.ORwhere("role",4)
 			.when( rc.filter != "", (q) => {
-				q.where("users.username","iLike","%#rc.filter#%");
-				q.ORwhere("users.last_name","iLike","%#rc.filter#%");
-				q.ORwhere("users.first_name","iLike","%#rc.filter#%");
-				q.ORwhere("users.email","iLike","%#rc.filter#%");
+				q.where("users.username","Like","%#rc.filter#%");
+				q.ORwhere("users.last_name","Like","%#rc.filter#%");
+				q.ORwhere("users.first_name","Like","%#rc.filter#%");
+				q.ORwhere("users.email","Like","%#rc.filter#%");
 			})
 			.orderByRaw( "first_name asc" )
 			.paginate(rc.currentPage, rc.perPage);

@@ -72,11 +72,14 @@ component extends="BaseHandler"{
 				j.on('payrates.pSeason', j.raw('YEAR(Date)'));
 			})
 			.orderBy(sortBy, usendingOrDesending)
-			.when(rc.keyExists("pq_filter"), function(q){
-				var deserializedFilter = deserializeJSON(rc.pq_filter);
-				for(col in deserializedFilter.data) {
-					q.having(col.dataIndx, "like", col.value & "%");
-				}
+			.when(rc.filterData != '', function(q){
+				// rc.keyExists("pq_filter")
+				// var deserializedFilter = deserializeJSON(rc.pq_filter);
+				// for(col in deserializedFilter.data) {
+				// 	q.having(col.dataIndx, "like", col.value & "%");
+				// }
+
+				q.having(rc.filterCol, "like", rc.filterData & "%")
 			})
 			.whereNull('deleteDate')
 			// .toSQL();
