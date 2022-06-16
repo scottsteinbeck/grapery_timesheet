@@ -4,16 +4,32 @@
     <div v-if="filterWarning != ''" class="bg-warning m-2 p-2">{{filterWarning}}</div>
 
     <div class="row">
-        <select class="form-control col-3 m-2" id="filterCol">
-            <option :selected="col.title == 'Field'" v-for="col in options.colModel" v-if="col.title != 'Edit'" :value="col.dataIndx">{{col.title}}</option>
-        </select>
-        
-        <input type="text" class="form-control col-3 m-2" id="filterData">
-        
-        <button class="btn btn-success col-2 m-2" @click="refreshView()">Filter</button>
-    </div>
+        <div class="col-2">
 
-    <div style="height: calc(100vh - 115px);">
+            <select class="form-control m-2" id="filterCol">
+                <option :selected="col.title == 'Field'" v-for="col in options.colModel" v-if="col.title != 'Edit'" :value="col.dataIndx">{{col.title}}</option>
+            </select>
+        </div>
+        <div class="col-2">
+            <select class="form-control m-2" id="filterType">
+                <option> Contains </option>
+                <option> = </option>
+                <option> &lt; </option>
+                <option> &gt; </option>
+            </select>
+        </div>
+        <div class="col-2">
+            <input type="text" class="form-control m-2" id="filterData">
+        </div>
+        <div class="col-2">
+            <button class="btn btn-outline-primary copy_btn m-2" @click="refreshView()">Filter</button>
+            <button class="btn btn-outline-danger delete_btn m-2" @click="clearFilter()">X</button>
+        </div>
+        <div class="col-2 offset-md-2">
+            <button class="btn btn-outline-success delete_btn m-2" @click="addRow()">+ Add Record</button>
+        </div>
+    </div>
+    <div style="height: calc(100vh - 130px);">
         <pq-grid ref="grid" :options="options"></pq-grid>
     </div>
 
@@ -24,6 +40,7 @@
     <cfoutput>polyfield = #serializeJSON(prc.polyfield)#</cfoutput>
     <cfoutput>crew = #serializeJSON(prc.crew)#</cfoutput>
     <cfoutput>duplicates = #serializeJSON(prc.duplicateRecords)#</cfoutput>
+    <cfoutput>payrates = #serializeJSON(prc.payrates)#</cfoutput>
 
     function editAddBtnHtml(rowDt) {
 
@@ -155,6 +172,12 @@
         return Math.round(val * 100)/100
     }
 
+    var sumArray = function(arrayOfNumbers){
+        return arrayOfNumbers.reduce(function(acc, x){
+            return acc += (x) ? x : 0;
+        }, 0);
+    }
+
     var calculateRow = function(rowData) {
 
         rowData.polyfield = polyfieldByFieldName[rowData.FieldCode]?.displayName;
@@ -180,7 +203,11 @@
         }
 
         if(!rowData.TotalCalculatedTime){
-            rowData.TotalCalculatedTime = rowData.TimeDiff + rowData.TimeDiff2nd + rowData.TimeDiff3rd;
+            // rowData.TotalCalculatedTime = rowData.TimeDiff + rowData.TimeDiff2nd + rowData.TimeDiff3rd;
+            rowData.TotalCalculatedTime = 0;
+            if(rowData.TimeDiff > 0) rowData.TotalCalculatedTime += parseFloat(rowData.TimeDiff);
+            if(rowData.TimeDiff2nd > 0) rowData.TotalCalculatedTime += parseFloat(rowData.TimeDiff2nd);
+            if(rowData.TimeDiff3rd > 0) rowData.TotalCalculatedTime += parseFloat(rowData.TimeDiff3rd);
         }
 
         if( new Date(rowData.TotalCalculatedTime) != 'Invalid Date'){
@@ -189,7 +216,16 @@
             rowData.employeeHours = parseFloat(rowData.TotalCalculatedTime);
         }
 
-        rowData.total = (rowData.total) ? numberFormat(rowData.total) : 0
+        var pLeader = 0;
+        var pAssistant = 0;
+        var pQC = 0;
+        if(payrates[new Date(rowData.Date).getFullYear()] != undefined){
+            rowYear = new Date(rowData.Date).getFullYear()
+            pLeader = payrates[rowYear].pLeader;
+            pAssistant = payrates[rowYear].pAssistant;
+            pQC = payrates[rowYear].pQC;
+        }
+        rowData.total = sumArray([(rowData.TimeDiff * pLeader), (rowData.TimeDiff2nd * pAssistant), (rowData.TimeDiff3rd * pAssistant), (rowData.QC_Hours * pQC)]);
 
         rowData.vineacres = 0;
         if( rowData.vines_per_acre && !isNaN(parseFloat(rowData.Totalvines))){
@@ -238,10 +274,89 @@
                 this.$refs.grid.export();
             },
             refreshView: function() {
+                this.filterWarning = '';
+
                 this.$refs.grid.grid.options.pqIS.data = [];
                 this.$refs.grid.grid.refreshDataAndView();
 
                 if( $('#filterData').val() == '') this.filterWarning = "Must enter a value to filter by!";
+            },
+            clearFilter: function(){
+                $('#filterCol').val('FieldCode');
+                $('#filterType').val('Contains');
+                $('#filterData').val('');
+
+                this.$refs.grid.grid.refreshDataAndView();
+            },
+            addRow: function(){
+                var _grid = this.$refs.grid.grid;
+
+                $('<div></div>').appendTo('body')
+                .html(editAddBtnHtml(undefined))
+                .dialog({
+                    modal: true,
+                    title: 'Add row',
+                    zIndex: 10000,
+                    classes:{
+                        'ui-dialog-titlebar-close': 'ui-button ui-corner-all ui-widget ui-button-icon-only'
+                    },
+                    autoOpen: true,
+                    width: 'auto',
+                    resizable: false,
+                    buttons: [
+                        {
+                            text: "Ok",
+                            class:"ui-button ui-corner-all ui-widget",
+                            click: function() {
+                            
+                                var newRowData = {
+                                    RECIEPTNO: $('#reciept').val(),
+                                    Crew: $('#crew').val(),
+                                    FieldCode: $('#field').val(),
+                                    Date: $('#crewData').val(),
+                                    QC_Average: $('#qcAverage').val(),
+                                    Totalvines: $('#totalVines').val(),
+                                    TimeDiff2nd: $('#assistantHours').val(),
+                                    TimeDiff: $('#leaderHours').val(),
+                                    QC_Hours: $('#qcHours').val(),
+                                    description: jobcodesByJobcode[$('#jobcodes').val()],
+                                    BlockID: $('#blockID').val(),
+                                    JobCode: $('#jobcodes').val()
+                                }
+
+                                var rowIndx = 0;
+
+                                $.ajax({
+                                    url: "api/v1/timeEntrys",
+                                    method: "POST",
+                                    data: {newRowData: JSON.stringify(newRowData)},
+                                    success: function(data){
+                                        newRowData.Time_Entry_Form_ROW_INDEX = data.GENERATEDKEY;
+                                        newRowData.contractor_name = data.CONTRACTORNAME;
+
+                                        _grid.addRow({newRow: calculateRow(newRowData), rowIndx: rowIndx, checkEditable: false});
+                                        _grid.refreshRow({rowIndx: rowIndx});
+                                        rowData = _grid.getRowData({ rowIndx: rowIndx });
+                                    }
+                                });
+
+                                
+                                $( this ).dialog( "close" );
+                            }
+                        },
+                        {
+                            text: "Cancel",
+                            class:"ui-button ui-corner-all ui-widget",
+                            click: function() {
+                                $( this ).dialog( "close" );
+                                resolt = false;
+                            }
+                        }
+                    ],
+                    close: function(event, ui) {
+                        $(this).remove();
+                    }
+                });
             }
         },
 
@@ -252,7 +367,7 @@
             this.options = {
 
                 showTitle: false,
-                showTop: true,
+                showTop: false,
                 locale: 'en',
                 height: '100%',
                 
@@ -263,7 +378,8 @@
                 // colModel: this.$options.columns1,
                 resizable: false,
                 postRenderInterval: -1,
-                virtualX: true, virtualY: true,
+                virtualX: true,
+                virtualY: true,
                 selectionModel: { type: null },
 
                 filterModel: { on: true, header: false, type: 'remote' },
@@ -274,90 +390,13 @@
                     }
                 },
 
-                toolbar:{
-                    items: [
-                        {
-                            type: 'button',
-                            icon: 'ui-icon-plus',
-                            label: 'Add Record',
-                            listener: function () {
-                                var _self = this;
-
-                                $('<div></div>').appendTo('body')
-                                .html(editAddBtnHtml(undefined))
-                                .dialog({
-                                    modal: true,
-                                    title: 'Add row',
-                                    zIndex: 10000,
-                                    classes:{
-                                        'ui-dialog-titlebar-close': 'ui-button ui-corner-all ui-widget ui-button-icon-only'
-                                    },
-                                    autoOpen: true,
-                                    width: 'auto',
-                                    resizable: false,
-                                    buttons: [
-                                        {
-                                            text: "Ok",
-                                            class:"ui-button ui-corner-all ui-widget",
-                                            click: function() {
-                                            
-                                                var newRowData = {
-                                                    RECIEPTNO: $('#reciept').val(),
-                                                    Crew: $('#crew').val(),
-                                                    FieldCode: $('#field').val(),
-                                                    Date: $('#crewData').val(),
-                                                    QC_Average: $('#qcAverage').val(),
-                                                    Totalvines: $('#totalVines').val(),
-                                                    TimeDiff2nd: $('#assistantHours').val(),
-                                                    TimeDiff: $('#leaderHours').val(),
-                                                    QC_Hours: $('#qcHours').val(),
-                                                    description: jobcodesByJobcode[$('#jobcodes').val()],
-                                                    BlockID: $('#blockID').val(),
-                                                    JobCode: $('#jobcodes').val()
-                                                }
-
-                                                var rowIndx = 0;
-                                                _self.addRow({newRow: calculateRow(newRowData), rowIndx: rowIndx, checkEditable: false});
-                                                _self.refreshRow({rowIndx: rowIndx});
-                                                rowData = _self.getRowData({ rowIndx: rowIndx });
-                                                
-                                                $.ajax({
-                                                    url: "api/v1/timeEntrys",
-                                                    method: "POST",
-                                                    data: {newRowData: JSON.stringify(rowData)},
-                                                    success: function(data){
-                                                        _self.getRowData({ rowIndx: rowIndx }).Time_Entry_Form_ROW_INDEX = data;
-                                                    }
-                                                });
-                                                
-                                                $( this ).dialog( "close" );
-                                            }
-                                        },
-                                        {
-                                            text: "Cancel",
-                                            class:"ui-button ui-corner-all ui-widget",
-                                            click: function() {
-                                                $( this ).dialog( "close" );
-                                                resolt = false;
-                                            }
-                                        }
-                                    ],
-                                    close: function(event, ui) {
-                                        $(this).remove();
-                                    }
-                                });
-                            }
-                        }
-                    ]
-                },
-
                 update: function(rowIndx, grid, oldRowData){
 
                     // if (grid.saveEditCell() == false) {
                     //     return false;
                     // }
                     
-                    // grid.showLoading();
+                    grid.showLoading();
                     grid.options.pqIS.data[rowIndx+1] = calculateRow(grid.options.pqIS.data[rowIndx+1]);
                     rowData = grid.getRowData({ rowIndx: rowIndx });
 
@@ -420,6 +459,7 @@
                             pq_rpp: this.options.pqIS.rpp,
                             filterCol: $('#filterCol').val(),
                             filterData: $('#filterData').val(),
+                            filterType: $('#filterType').val(),
                         };
                     },
                     getData: function (response) {
@@ -459,8 +499,6 @@
                         postRender: function(ui) {
                             var _self = this;
                             var cell = _self.getCell(ui);
-
-                            // console.log(_self.options.pqIS.data);
 
                             if(!_self.getRowsByClass({ cls: 'pq-row-edit' }).length){
                                 
@@ -593,25 +631,15 @@
                         }
                     },
 
-                    { title: "Contractor Name", width: 120, dataIndx: "contractor_name", dataType: "string" },
+                    { title: "Contractor Name", width: 120, dataIndx: "contractor_name", dataType: "string", editable: false },
 
-                    { title: "Crew Code", width: 120, dataIndx: "Crew", dataType: "string" },
+                    { title: "Crew Code", width: 120, dataIndx: "Crew", dataType: "string", editable: false },
 
                     { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", editable: false },
 
-                    { title:'Field Vines per Acre', width: 135, editable: false, dataIndx: "vines_per_acre", dataType: "float" },
+                    { title:'Field Vines per Acre', width: 135, dataIndx: "vines_per_acre", dataType: "float", editable: false },
 
-                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", editable: false,
-                        // filter: { condition: 'begin', listeners: [{'change' : function(evt, item){
-                        //     var grid = $(this).closest(".pq-grid");
-                        //     // grid.pqGrid( { dataModel: { data: grid.pqGrid("option").pqIS.data } });
-
-                        //     grid.pqGrid('filter', {
-                        //         oper: 'replace',
-                        //         data: [{dataIndx: item.dataIndx, value: item.value}]
-                        //     });
-                        // }}], type: 'textbox', value: "", on: true }
-                    },
+                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", editable: false },
 
                     { title: "Total Acres", width: 100, dataIndx: "field_acres1", dataType: "float", editable: false },
 
@@ -623,22 +651,11 @@
 
                     { title: "Operation Name", width: 150, dataIndx: "description", dateType: "string", editable: false },
                         
-                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "string", editable: false,
-                        // filter: { type: 'textbox', condition: 'begin', value: "", listeners: ['keyup'] },
-                        // render: function(ui){
-                        //     var curDate = new Date();
-                        //     var dataIdxDate = new Date(ui.rowData.Date);
+                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "string", editable: false },
 
-                        //     if(dataIdxDate > curDate){
-                        //         return { cls: 'futer_date_error' };
-                        //     }
-                        //     return {};
-                        // }
-                    },
+                    { title: "Cost / Acre Actual", width: 150, dataIndx: "acresPerHour", dataType: "float", editable: false },
 
-                    { title: "Cost / Acre Actual", width: 150, editable: false, dataIndx: "acresPerHour", dataType: "float" },
-
-                    { title: "Man Hr / Acre Actual", width: 150, editable: false, dataIndx: "employeeAcresPerHr", dataType: "float" },
+                    { title: "Man Hr / Acre Actual", width: 150, dataIndx: "employeeAcresPerHr", dataType: "float", editable: false },
 
                     { title: "Quality Score", width: 100, dataIndx: "QC_Average", dateType: "float", editable: false },
 
@@ -652,9 +669,9 @@
                     
                     { title: "Inspector Hours", width: 120, dataIndx: "QC_Hours", dateType: "float", editable: false },
                         
-                    {title: 'Employee Hours', width:115, dataIndx: "employeeHours", editable: false, dateType: "integer" },
+                    {title: 'Employee Hours', width:115, dataIndx: "employeeHours", dateType: "integer", editable: false },
 
-                    { title: "Total Cost", width: 100, dataIndx: "total", editable: false, dateType: "float" }
+                    { title: "Total Cost", width: 100, dataIndx: "total", dateType: "float", editable: false }
                 ],
             };
 

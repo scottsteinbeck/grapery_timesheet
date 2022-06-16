@@ -77,6 +77,11 @@ component extends="coldbox.system.EventHandler" {
 			GROUP BY Crew, FieldCode, JobCode, RECIEPTNO, `Date`
 			HAVING COUNT(*) > 2
 		",{ },{ returnType: "array" });
+
+		prc.payrates = queryExecute("
+			SELECT *
+			FROM payrates
+		",{},{ returnType: "struct", columnKey: "pSeason"});
 	}
 
 

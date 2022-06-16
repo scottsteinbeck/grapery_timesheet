@@ -24,6 +24,8 @@ component extends="BaseHandler"{
 			"description",
 			"contractor_name",
 
+			"field_acres1",
+
 			"HOUR(TotalCalculatedTime) AS employeeHours",
 
 			"(vine_count / field_acres1) AS vines_per_acre",
@@ -73,13 +75,14 @@ component extends="BaseHandler"{
 			})
 			.orderBy(sortBy, usendingOrDesending)
 			.when(rc.filterData != '', function(q){
-				// rc.keyExists("pq_filter")
-				// var deserializedFilter = deserializeJSON(rc.pq_filter);
-				// for(col in deserializedFilter.data) {
-				// 	q.having(col.dataIndx, "like", col.value & "%");
-				// }
-
-				q.having(rc.filterCol, "like", rc.filterData & "%")
+				var filterTp;
+				filterTp = rc.filterType;
+				if(rc.filterType == "Contains")
+				{
+					filterTp = "like";
+					rc.filterData &= "%"
+				}
+				q.having(rc.filterCol, filterTp, rc.filterData);
 			})
 			.whereNull('deleteDate')
 			// .toSQL();
@@ -154,7 +157,19 @@ component extends="BaseHandler"{
 				",newRowsToQry , { result="newRecord" });
 			}
 
-			return newRecord.generated_key;
+			contractorName = queryExecute("
+				SELECT CONTRACTOR.contractor_name
+				FROM TIME_ENTRY_FORM_V2
+				LEFT JOIN CREW ON TIME_ENTRY_FORM_V2.Crew = CREW.CrewNumber
+				LEFT JOIN CONTRACTOR ON CONTRACTOR.GlobalID = CREW.ContractorID
+				WHERE TIME_ENTRY_FORM_V2.Time_Entry_Form_ROW_INDEX = :tefID AND CREW.GDB_TO_DATE = '9999-12-31 23:59:59.000'
+			",{
+				tefID = { value = newRecord.generated_key, cfsqltype="cf_sql_integer" }
+			},{});
+
+			// dump(contractorName); abort;
+
+			return {generatedKey: newRecord.generated_key,contractorName: contractorName.contractor_name};
 		}
     }
 
