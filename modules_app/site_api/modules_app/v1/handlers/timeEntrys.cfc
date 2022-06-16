@@ -11,10 +11,11 @@ component extends="BaseHandler"{
 	property name = "JSONDiff" inject = "JSONDiff";
 
 	function index( event, rc, prc ) {
-		// if(rc.keyExists("pq_filter")) {dump(rc.pq_filter); abort;}
-
-		// if(isNull(pq_curpage)) var pq_curpage = 1;
-		// if(isNull(rc.pq_rpp)) rc.pq_rpp = 1;
+		// if(rc.filterData != '') {
+		// 	dump(rc.filterCol);
+		// 	dump(rc.filterData);
+		// 	abort;
+		// }
 
 		selectItems = arrayMerge(getQueryColNames(true), [
             "pSeason", "pLeader", "pAssistant", "pQC", "pFieldWorker",
@@ -30,15 +31,17 @@ component extends="BaseHandler"{
 
 			"(vine_count / field_acres1) AS vines_per_acre",
 
-			"(TimeDiff * pLeader) + (TimeDiff2nd * pAssistant) + (TimeDiff3rd * pAssistant) + (QC_Hours * pQC) AS total",
+			"(ifNull(TimeDiff,0) * pLeader) + (ifNull(TimeDiff2nd,0) * pAssistant) + (ifNull(TimeDiff3rd,0) * pAssistant) + (ifNull(QC_Hours,0) * pQC) AS total",
 
-			"(Totalvines / (vine_count / field_acres1)) AS vineacres",
+			"ROUND((Totalvines / (vine_count / field_acres1)), 2) AS vineacres",
 
 			// employeeHours / vineacres = employeeAcresPerHr
 			"HOUR(TotalCalculatedTime) / (Totalvines / (vine_count / field_acres1)) AS employeeAcresPerHr",
 
 			// total / vineacres = acresPerHour
-			"(TimeDiff * pLeader) + (TimeDiff2nd * pAssistant) + (TimeDiff3rd * pAssistant) + (QC_Hours * pQC) / (Totalvines / (vine_count / field_acres1)) AS acresPerHour",
+			"ROUND(((ifNull(TimeDiff, 0) * pLeader) + (ifNull(TimeDiff2nd, 0) * pAssistant) + (ifNull(TimeDiff3rd,0) * pAssistant) + (ifNull(QC_Hours,0) * pQC)) / (Totalvines / (vine_count / field_acres1)),2) AS acresPerHour",
+		
+			"CREW.CrewName"
 		]);
 
 		if(rc.keyExists("pq_sort")) {
@@ -77,18 +80,26 @@ component extends="BaseHandler"{
 			.when(rc.filterData != '', function(q){
 				var filterTp;
 				filterTp = rc.filterType;
-				if(rc.filterType == "Contains")
-				{
+				if(rc.filterType == "Contains") {
 					filterTp = "like";
-					rc.filterData &= "%"
+					rc.filterData = "%" & rc.filterData & "%"
 				}
+
+				switch(rc.filterCol){
+					case "crew_info":
+						rc.filterCol = "CREW.CrewName";
+						break;
+				}
+
 				q.having(rc.filterCol, filterTp, rc.filterData);
 			})
 			.whereNull('deleteDate')
 			// .toSQL();
 			.paginate(pq_curpage, rc.pq_rpp);
 
-			// dump(timeEntryForm); abort;
+			// if(rc.filterData != '') {
+				// dump(timeEntryForm); abort;
+			// }
 
 		return {"totalRecords": timeEntryForm.pagination.totalRecords, "curPage": timeEntryForm.pagination.page, "data": timeEntryForm.results };
 	}
@@ -157,19 +168,23 @@ component extends="BaseHandler"{
 				",newRowsToQry , { result="newRecord" });
 			}
 
-			contractorName = queryExecute("
-				SELECT CONTRACTOR.contractor_name
+			extraRowData = queryExecute("
+				SELECT CONTRACTOR.contractor_name, POLYFIELD.field_acres1, vine_count
 				FROM TIME_ENTRY_FORM_V2
 				LEFT JOIN CREW ON TIME_ENTRY_FORM_V2.Crew = CREW.CrewNumber
 				LEFT JOIN CONTRACTOR ON CONTRACTOR.GlobalID = CREW.ContractorID
-				WHERE TIME_ENTRY_FORM_V2.Time_Entry_Form_ROW_INDEX = :tefID AND CREW.GDB_TO_DATE = '9999-12-31 23:59:59.000'
+				LEFT JOIN POLYFIELD ON TIME_ENTRY_FORM_V2.FieldCode = POLYFIELD.field_name
+				WHERE TIME_ENTRY_FORM_V2.Time_Entry_Form_ROW_INDEX = :tefID 
+					AND CREW.GDB_TO_DATE = '9999-12-31 23:59:59.000' 
+					AND CONTRACTOR.GDB_TO_DATE = '9999-12-31 23:59:59.0000000'
+				LIMIT 1
 			",{
 				tefID = { value = newRecord.generated_key, cfsqltype="cf_sql_integer" }
-			},{});
+			},{ returnType = "array"});
 
 			// dump(contractorName); abort;
 
-			return {generatedKey: newRecord.generated_key,contractorName: contractorName.contractor_name};
+			return {generatedKey: newRecord.generated_key,extraRowData: extraRowData[1]};
 		}
     }
 

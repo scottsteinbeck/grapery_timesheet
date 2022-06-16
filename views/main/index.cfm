@@ -3,7 +3,7 @@
 
     <div v-if="filterWarning != ''" class="bg-warning m-2 p-2">{{filterWarning}}</div>
 
-    <div class="row">
+    <div class="row m-0">
         <div class="col-2">
 
             <select class="form-control m-2" id="filterCol">
@@ -22,7 +22,7 @@
             <input type="text" class="form-control m-2" id="filterData">
         </div>
         <div class="col-2">
-            <button class="btn btn-outline-primary copy_btn m-2" @click="refreshView()">Filter</button>
+            <button class="btn btn-outline-primary copy_btn m-2" @click="filterData()">Filter</button>
             <button class="btn btn-outline-danger delete_btn m-2" @click="clearFilter()">X</button>
         </div>
         <div class="col-2 offset-md-2">
@@ -46,7 +46,7 @@
 
         var addHtml = `<div class="form-group">
                             <label for="reciept">Reciept Number</label>
-                            <input class="form-control" type="text" id="reciept"></input>
+                            <input class="form-control" type="text" id="reciept" value="55555"></input>
                         </div>
                         <br>
                         `
@@ -273,20 +273,29 @@
                 debugger;
                 this.$refs.grid.export();
             },
-            refreshView: function() {
+            filterData: function() {
+                var grid = this.$refs.grid.grid;
                 this.filterWarning = '';
 
-                this.$refs.grid.grid.options.pqIS.data = [];
-                this.$refs.grid.grid.refreshDataAndView();
-
                 if( $('#filterData').val() == '') this.filterWarning = "Must enter a value to filter by!";
+                else {
+                    grid.scrollRow({rowIndxPage: 0});
+                    grid.options.pqIS.init();
+                    grid.refreshDataAndView();
+                }
             },
             clearFilter: function(){
-                $('#filterCol').val('FieldCode');
-                $('#filterType').val('Contains');
-                $('#filterData').val('');
-
-                this.$refs.grid.grid.refreshDataAndView();
+                var grid = this.$refs.grid.grid;
+                
+                if($('#filterCol').val() != 'FieldCode' || $('#filterType').val() != 'Contains' || $('#filterData').val() != '') {
+                    $('#filterCol').val('FieldCode');
+                    $('#filterType').val('Contains');
+                    $('#filterData').val('');
+                
+                    grid.scrollRow({rowIndxPage: 0});
+                    grid.options.pqIS.init();
+                    grid.refreshDataAndView();
+                }
             },
             addRow: function(){
                 var _grid = this.$refs.grid.grid;
@@ -332,14 +341,14 @@
                                     data: {newRowData: JSON.stringify(newRowData)},
                                     success: function(data){
                                         newRowData.Time_Entry_Form_ROW_INDEX = data.GENERATEDKEY;
-                                        newRowData.contractor_name = data.CONTRACTORNAME;
+                                        newRowData.contractor_name = data.EXTRAROWDATA.contractor_name;
+                                        newRowData.field_acres1 = data.EXTRAROWDATA.field_acres1;
+                                        newRowData.vine_count = data.EXTRAROWDATA.vine_count;
 
                                         _grid.addRow({newRow: calculateRow(newRowData), rowIndx: rowIndx, checkEditable: false});
                                         _grid.refreshRow({rowIndx: rowIndx});
-                                        rowData = _grid.getRowData({ rowIndx: rowIndx });
                                     }
                                 });
-
                                 
                                 $( this ).dialog( "close" );
                             }
@@ -374,7 +383,7 @@
                 collapsible: {
                     show: false,
                 },
-                columnTemplate: { width: 100 },
+                // columnTemplate: { width: '100%', minWidth: 50 },
                 // colModel: this.$options.columns1,
                 resizable: false,
                 postRenderInterval: -1,
@@ -651,7 +660,16 @@
 
                     { title: "Operation Name", width: 150, dataIndx: "description", dateType: "string", editable: false },
                         
-                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "string", editable: false },
+                    { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "string", editable: false,
+                        render: function(ui){
+                            var curDate = new Date();
+                            var dataIdxDate = new Date(ui.rowData.Date);
+                            if(dataIdxDate > curDate){
+                                return { cls: 'futer_date_error' };
+                            }
+                            return {};
+                        }
+                    },
 
                     { title: "Cost / Acre Actual", width: 150, dataIndx: "acresPerHour", dataType: "float", editable: false },
 
@@ -671,7 +689,9 @@
                         
                     {title: 'Employee Hours', width:115, dataIndx: "employeeHours", dateType: "integer", editable: false },
 
-                    { title: "Total Cost", width: 100, dataIndx: "total", dateType: "float", editable: false }
+                    { title: "Total Cost", width: 100, dataIndx: "total", dateType: "float", editable: false },
+
+                    // { title: "temp", width: 100, dataIndx: "Time_Entry_Form_ROW_INDEX", dataType: "string", editable: true },
                 ],
             };
 
