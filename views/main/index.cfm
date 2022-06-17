@@ -6,12 +6,12 @@
     <div class="row m-0">
         <div class="col-2">
 
-            <select class="form-control m-2" id="filterCol">
+            <select class="form-control form-select m-2" id="filterCol" v-model="filterCol">
                 <option :selected="col.title == 'Field'" v-for="col in options.colModel" v-if="col.title != 'Edit'" :value="col.dataIndx">{{col.title}}</option>
             </select>
         </div>
         <div class="col-2">
-            <select class="form-control m-2" id="filterType">
+            <select class="form-control form-select m-2" id="filterType" v-model="filterType">
                 <option> Contains </option>
                 <option> = </option>
                 <option> &lt; </option>
@@ -19,14 +19,14 @@
             </select>
         </div>
         <div class="col-2">
-            <input type="text" class="form-control m-2" id="filterData">
+            <input type="text" class="form-control m-2" id="filterData" placeholder="Filter by..." v-model="filterBy">
         </div>
         <div class="col-2">
-            <button class="btn btn-outline-primary copy_btn m-2" @click="filterData()">Filter</button>
-            <button class="btn btn-outline-danger delete_btn m-2" @click="clearFilter()">X</button>
+            <button class="btn btn-outline-primary copy_btn m-2" @click="filterData()"><i class="bi bi-search"></i></button>
+            <button v-if="filterCol != 'FieldCode' || filterType != 'Contains' || filterBy != ''" class="btn btn-outline-danger delete_btn m-2" @click="clearFilter()"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="col-2 offset-md-2">
-            <button class="btn btn-outline-success delete_btn m-2" @click="addRow()">+ Add Record</button>
+            <button class="btn btn-outline-success delete_btn m-2" @click="addRow()"><i class="bi bi-plus-lg"></i> Add Record</button>
         </div>
     </div>
     <div style="height: calc(100vh - 130px);">
@@ -46,7 +46,7 @@
 
         var addHtml = `<div class="form-group">
                             <label for="reciept">Reciept Number</label>
-                            <input class="form-control" type="text" id="reciept" value="55555"></input>
+                            <input class="form-control" type="text" id="reciept"></input>
                         </div>
                         <br>
                         `
@@ -284,18 +284,22 @@
                     grid.refreshDataAndView();
                 }
             },
-            clearFilter: function(){
+            clearFilter: function() {
                 var grid = this.$refs.grid.grid;
                 
-                if($('#filterCol').val() != 'FieldCode' || $('#filterType').val() != 'Contains' || $('#filterData').val() != '') {
-                    $('#filterCol').val('FieldCode');
-                    $('#filterType').val('Contains');
-                    $('#filterData').val('');
+                $('#filterCol').val('FieldCode');
+                $('#filterType').val('Contains');
+                $('#filterData').val('');
+
+                this.filterCol = 'FieldCode';
+                this.filterType = 'Contains';
+                this.filterBy = '';
                 
-                    grid.scrollRow({rowIndxPage: 0});
-                    grid.options.pqIS.init();
-                    grid.refreshDataAndView();
-                }
+                grid.scrollRow({rowIndxPage: 0});
+                grid.options.pqIS.init();
+                grid.refreshDataAndView();
+
+                console.log(this.filterCol != 'FieldCode', this.filterType != 'Contains', this.filterBy != '');
             },
             addRow: function(){
                 var _grid = this.$refs.grid.grid;
@@ -335,6 +339,7 @@
 
                                 var rowIndx = 0;
 
+                                _grid.showLoading();
                                 $.ajax({
                                     url: "api/v1/timeEntrys",
                                     method: "POST",
@@ -348,6 +353,8 @@
                                         _grid.addRow({newRow: calculateRow(newRowData), rowIndx: rowIndx, checkEditable: false});
                                         _grid.refreshRow({rowIndx: rowIndx});
                                     }
+                                }).done(function() {
+                                    _grid.hideLoading();
                                 });
                                 
                                 $( this ).dialog( "close" );
@@ -396,38 +403,6 @@
                 beforeSort: function (evt) {
                     if (evt.originalEvent) {//only if sorting done through header cell click.
                         this.options.pqIS.init();
-                    }
-                },
-
-                update: function(rowIndx, grid, oldRowData){
-
-                    // if (grid.saveEditCell() == false) {
-                    //     return false;
-                    // }
-                    
-                    grid.showLoading();
-                    grid.options.pqIS.data[rowIndx+1] = calculateRow(grid.options.pqIS.data[rowIndx+1]);
-                    rowData = grid.getRowData({ rowIndx: rowIndx });
-
-                    if(rowData["Time_Entry_Form_ROW_INDEX"] == undefined){
-                        $.ajax({
-                        url: "/api/v1/timeEntrys",
-                        method: "POST",
-                        data: { newRowData: JSON.stringify(rowData),
-                            oldRowData: JSON.stringify(oldRowData) }
-                        }).done(function(){
-                            grid.hideLoading();
-                        });
-                    }
-                    else{
-                        $.ajax({
-                            url: "/api/v1/timeEntrys/" + rowData.Time_Entry_Form_ROW_INDEX,
-                            method: "PUT",
-                            data: { newRowData: JSON.stringify(rowData), 
-                                oldRowData: JSON.stringify(oldRowData) }
-                        }).done(function(){
-                            grid.hideLoading();
-                        });
                     }
                 },
 
@@ -616,8 +591,20 @@
                                                     ui.rowData.JobCode = $('#jobcodes').val();
                                                     
                                                     _self.updateRow({rowIndx: ui.rowIndx, newRow: newRowData, checkEditable: false});
-                                                    
-                                                    app.options.update(ui.rowIndx, _self, ui.rowData);
+
+                                                    _self.showLoading();
+                                                    _self.options.pqIS.data[ui.rowIndx+1] = calculateRow(_self.options.pqIS.data[ui.rowIndx+1]);
+                                                    oldRowData = ui.rowData;
+                                                    rowData = _self.getRowData({ rowIndx: ui.rowIndx });
+
+                                                    $.ajax({
+                                                        url: "/api/v1/timeEntrys/" + rowData.Time_Entry_Form_ROW_INDEX,
+                                                        method: "PUT",
+                                                        data: { newRowData: JSON.stringify(rowData), 
+                                                            oldRowData: JSON.stringify(oldRowData) }
+                                                    }).done(function(){
+                                                        _self.hideLoading();
+                                                    });
 
                                                     $( this ).dialog( "close" );
                                                 }
@@ -698,6 +685,9 @@
             return {
                 rowIndex: -1,
                 filterWarning: this.filterWarning,
+                filterCol: 'FieldCode',
+                filterType: 'Contains',
+                filterBy: '',
             };
         }
     });

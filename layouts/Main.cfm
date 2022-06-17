@@ -23,35 +23,49 @@
 
 	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
 
-	<script src="https://unpkg.com/jquery@3.4.0/dist/jquery.js"></script>
 
-    <link
-      href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.structure.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.theme.css"
-      rel="stylesheet"
-    />
-    <script src="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.js"></script>
+	<!--- <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+		crossorigin="anonymous"></script>
+		
+		<script
+		src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"
+		integrity="sha256-6XMVI0zB8cRzfZjqKcD01PBsAy3FlDASrlC8SxCpInY="
+		crossorigin="anonymous"></script> --->
+		
+		<script src="https://unpkg.com/jquery@3.4.0/dist/jquery.js"></script>
+		
+		<link
+		href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.css"
+		rel="stylesheet"
+		/>
+		<link
+		href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.structure.css"
+		rel="stylesheet"
+		/>
+		<link
+		href="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.theme.css"
+		rel="stylesheet"
+		/>
+		<script src="https://unpkg.com/jquery-ui-pack@1.12.2/jquery-ui.js"></script>
+		
+		<!--- <script scr="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+		<script scr="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> --->
 
-    <link
-      href="https://unpkg.com/pqgridf@3.5.0/pqgrid.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://unpkg.com/pqgridf@3.5.0/pqgrid.ui.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://unpkg.com/pqgridf@3.5.0/themes/steelblue/pqgrid.css"
-      rel="stylesheet"
-    />
-
+		
+		<link
+		href="https://unpkg.com/pqgridf@3.5.0/pqgrid.min.css"
+		rel="stylesheet"
+		/>
+		<link
+		href="https://unpkg.com/pqgridf@3.5.0/pqgrid.ui.min.css"
+		rel="stylesheet"
+		/>
+		<link
+		href="https://unpkg.com/pqgridf@3.5.0/themes/steelblue/pqgrid.css"
+		rel="stylesheet"
+		/>
+		
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
 
     <script src="https://unpkg.com/pqgridf@3.5.0/pqgrid.min.js"></script>

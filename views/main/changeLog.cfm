@@ -108,12 +108,19 @@
             },
 
             showAll: function() {
+                _self = this;
+
                 $.ajax({
                     url: "api/v1/changeLog",
                     method: "GET",
                     success: function(data){
-                        console.log(changeLogData, data);
-                        changeLogData = data;
+                        for(var i=0; i < data.length; i++) {
+                            changeLogData.push({});
+                            for(item in data[i]) {
+                                console.log([changeLogData[i], item, data[i][item]]);
+                                // Vue.set(changeLogData[i], item, data[i][item]);
+                            }
+                        }
                     }
                 });
             },
