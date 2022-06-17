@@ -1,4 +1,22 @@
+<style>
+    thead {
+        position: sticky;
+        background: white;
+        top: 100px;
+    }
+    .topBar {
+        height: 60px;
+        width: 100%;
+        position: sticky;
+        background: white;
+        top: 55px;
+    }
+</style>
 <div id="mainVue">
+
+    <div class="topBar p-2">
+        <button class="btn btn-outline-success btn-sm" @click="showAll()">Show All</button>
+    </div>
 
     <table class="table table-sm table-striped">
         <thead>
@@ -34,7 +52,7 @@
 
                 <td>
                     <div v-if="!logData.clRestoreDate">
-                        <button class="btn btn-primary" @click="undo(logData.clOldRowData, logData.clTEFID, logData.clAction, logData.clID)"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        <button class="btn btn-outline-primary" @click="undo(logData.clOldRowData, logData.clTEFID, logData.clAction, logData.clID)"><i class="bi bi-arrow-counterclockwise"></i></button>
                     </div>
                     <div v-if="logData.clRestoreDate">
                         Restored
@@ -88,6 +106,19 @@
 
                 });
             },
+
+            showAll: function() {
+                $.ajax({
+                    url: "api/v1/changeLog",
+                    method: "GET",
+                    success: function(data){
+                        console.log(changeLogData, data);
+                        changeLogData = data;
+                    }
+                });
+            },
         }
     });
+
+    $('html,body').animate({scrollTop: document.body.scrollHeight},"fast");
 </script>

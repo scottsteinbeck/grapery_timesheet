@@ -85,10 +85,8 @@ component extends="BaseHandler"{
 					rc.filterData = "%" & rc.filterData & "%"
 				}
 
-				switch(rc.filterCol){
-					case "crew_info":
-						rc.filterCol = "CREW.CrewName";
-						break;
+				if(rc.filterCol == "crew_info") {
+					rc.filterCol = "CREW.CrewName";
 				}
 
 				q.having(rc.filterCol, filterTp, rc.filterData);

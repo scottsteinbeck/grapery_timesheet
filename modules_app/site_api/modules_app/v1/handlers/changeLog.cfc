@@ -8,6 +8,14 @@ component extends="BaseHandler"{
 	};
 
 	function index( event, rc, prc ) {
+        prc.changeLogData = queryExecute("
+			SELECT *
+			FROM change_log
+			LEFT JOIN TIME_ENTRY_FORM_V2 ON clTEFID = Time_Entry_Form_ROW_INDEX AND clReciept = RECIEPTNO AND clAction = 'add'
+		",
+		{ }, { returnType = 'array'});
+
+        return prc.changeLogData;
 	}
 
 	function create( event, rc, prc ) {

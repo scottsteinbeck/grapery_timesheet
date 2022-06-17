@@ -30,7 +30,7 @@ component extends="coldbox.system.EventHandler" {
 			WHERE clDate > :showToDate
 		",
 		{
-			showToDate = { value = dateAdd('m', -1, now()), cfsqltype = "cf_sql_date"}
+			showToDate = { value = dateAdd('d', -30, now()), cfsqltype = "cf_sql_date"}
 		},
 		{ returnType = 'array'});
 	}
