@@ -26,7 +26,7 @@ component extends="coldbox.system.EventHandler" {
 		prc.changeLogData = queryExecute("
 			SELECT *
 			FROM change_log
-			LEFT JOIN TIME_ENTRY_FORM_V2 ON clTEFID = Time_Entry_Form_ROW_INDEX AND clReciept = RECIEPTNO AND clAction = 'add'
+			-- LEFT JOIN TIME_ENTRY_FORM_V2 ON clTEFID = Time_Entry_Form_ROW_INDEX AND clReciept = RECIEPTNO AND clAction = 'add'
 			WHERE clDate > :showToDate
 		",
 		{

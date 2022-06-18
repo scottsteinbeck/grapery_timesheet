@@ -15,7 +15,8 @@
 <div id="mainVue">
 
     <div class="topBar p-2">
-        <button class="btn btn-outline-success btn-sm" @click="showAll()">Show All</button>
+        <button v-if="ShowOrHideAll" class="btn btn-outline-success btn-sm" @click="showAll()">Show All</button>
+        <button v-if="!ShowOrHideAll" class="btn btn-outline-success btn-sm" @click="hideOld()">Hide Old</button>
     </div>
 
     <table class="table table-sm table-striped">
@@ -28,7 +29,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="logData in changeLogData" :class="{'table-secondary': logData.clRestoreDate}">
+            <tr v-for="logData in changeLogItems" :class="{'table-secondary': logData.clRestoreDate}">
                 <td>{{logData.clAction}}</td>
 
                 <td>{{logData.clReciept}}</td>
@@ -65,20 +66,26 @@
 </div>
 
 <script>
-    
-    <cfoutput>changeLogData = #serializeJSON(prc.changeLogData)#</cfoutput>
-
-    changeLogData.map(function(x){
-        if(x.clChanges != "") x.clChanges = JSON.parse(x.clChanges);
-        if(x.clOldRowData != "") x.clOldRowData = JSON.parse(x.clOldRowData);
-        return x;
-    });
+    <cfoutput>changeLogDataPRC = #serializeJSON(prc.changeLogData)#</cfoutput>
 
     var vueObj = new Vue({
         el: "#mainVue",
-
+        computed:{
+            changeLogItems: function () {
+                
+                return this.changeLogData.map(function(x){
+                    try{
+                        x.clChanges = JSON.parse(x.clChanges);
+                    } catch(e){}
+                    try{    
+                        x.clOldRowData = JSON.parse(x.clOldRowData);
+                    } catch(e){}
+                    return x;
+                });
+            }
+        },
         data: {
-            changeLogData: changeLogData,
+            changeLogData: changeLogDataPRC,
 
             timeEntryFormColNms: [
                     "BlockID", "Crew",
@@ -88,6 +95,8 @@
                     "RECIEPTNO",
                     "TimeDiff", "TimeDiff2nd", "TimeDiff3rd"
                 ],
+
+            ShowOrHideAll: true,
         },
 
         methods: {
@@ -108,23 +117,37 @@
             },
 
             showAll: function() {
-                _self = this;
+                var _self = this;
 
                 $.ajax({
                     url: "api/v1/changeLog",
                     method: "GET",
+                    data: {last30Days: false},
                     success: function(data){
                         for(var i=0; i < data.length; i++) {
-                            changeLogData.push({});
-                            for(item in data[i]) {
-                                console.log([changeLogData[i], item, data[i][item]]);
-                                // Vue.set(changeLogData[i], item, data[i][item]);
-                            }
+                           _self.changeLogData.push(data[i]);
                         }
                     }
                 });
+
+                _self.ShowOrHideAll = false;
             },
-        }
+
+            hideOld: function() {
+                var _self = this;
+                
+                $.ajax({
+                    url: "api/v1/changeLog",
+                    method: "GET",
+                    data: {last30Days: true},
+                    success: function(data) {
+                        console.log(data);
+                    }
+                });
+
+                _self.ShowOrHideAll = true;
+            }
+        },
     });
 
     $('html,body').animate({scrollTop: document.body.scrollHeight},"fast");

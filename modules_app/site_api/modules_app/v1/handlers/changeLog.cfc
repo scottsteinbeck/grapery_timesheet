@@ -8,11 +8,11 @@ component extends="BaseHandler"{
 	};
 
 	function index( event, rc, prc ) {
+        // dump(((rc.last30Days) ? ">" : "<=")); abort;
         prc.changeLogData = queryExecute("
 			SELECT *
 			FROM change_log
-			LEFT JOIN TIME_ENTRY_FORM_V2 ON clTEFID = Time_Entry_Form_ROW_INDEX AND clReciept = RECIEPTNO AND clAction = 'add'
-            WHERE clDate <= :showToDate
+            WHERE clDate " & ((rc.last30Days) ? ">" : "<=") & " :showToDate
         ",
 		{
 			showToDate = { value = dateAdd('d', -30, now()), cfsqltype = "cf_sql_date"}
