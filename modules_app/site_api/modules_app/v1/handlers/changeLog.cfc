@@ -8,11 +8,10 @@ component extends="BaseHandler"{
 	};
 
 	function index( event, rc, prc ) {
-        // dump(((rc.last30Days) ? ">" : "<=")); abort;
         prc.changeLogData = queryExecute("
 			SELECT *
 			FROM change_log
-            WHERE clDate " & ((rc.last30Days) ? ">" : "<=") & " :showToDate
+            WHERE clDate <= :showToDate
         ",
 		{
 			showToDate = { value = dateAdd('d', -30, now()), cfsqltype = "cf_sql_date"}

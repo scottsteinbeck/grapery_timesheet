@@ -2,21 +2,88 @@
     thead {
         position: sticky;
         background: white;
-        top: 100px;
+        top: 140px;
     }
     .topBar {
-        height: 60px;
+        height: 90px;
         width: 100%;
         position: sticky;
         background: white;
         top: 55px;
     }
+
+    /* The switch - the box around the slider */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    /* Hide default HTML checkbox */
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    /* The slider */
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+        box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+        border-radius: 34px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
 </style>
+
 <div id="mainVue">
 
     <div class="topBar p-2">
-        <button v-if="ShowOrHideAll" class="btn btn-outline-success btn-sm" @click="showAll()">Show All</button>
-        <button v-if="!ShowOrHideAll" class="btn btn-outline-success btn-sm" @click="hideOld()">Hide Old</button>
+        <div>Only show records within the last 30 days.</div>
+        <label class="switch">
+            <input type="checkbox" v-model="ShowOrHideAll" @click="showOrHideOld()">
+            <span class="slider round"></span>
+        </label>
     </div>
 
     <table class="table table-sm table-striped">
@@ -116,34 +183,46 @@
                 });
             },
 
-            showAll: function() {
+            showOrHideOld: function() {
                 var _self = this;
 
-                $.ajax({
-                    url: "api/v1/changeLog",
-                    method: "GET",
-                    data: {last30Days: false},
-                    success: function(data){
-                        for(var i=0; i < data.length; i++) {
-                           _self.changeLogData.push(data[i]);
+                if(_self.ShowOrHideAll) {
+                    $.ajax({
+                        url: "api/v1/changeLog",
+                        method: "GET",
+                        success: function(data){
+                            for(var i=0; i < data.length; i++) {
+                                _self.changeLogData.push(data[i]);
+                            }
+                        }
+                    });
+                }
+                else {
+                    pastDate = new Date();
+                    pastDate.setTime(pastDate.getTime() - ((24*60*60*1000) * 30));
+    
+                    for(var i=0; i<_self.changeLogData.length; i++) {
+                        itemDate = new Date(_self.changeLogData[i].clDate);
+                        if(itemDate.getTime() <= pastDate.getTime(pastDate)) {
+                            _self.changeLogData.splice(i,1);
                         }
                     }
-                });
-
-                _self.ShowOrHideAll = false;
+                }
+                // _self.ShowOrHideAll = false;
             },
 
             hideOld: function() {
                 var _self = this;
-                
-                $.ajax({
-                    url: "api/v1/changeLog",
-                    method: "GET",
-                    data: {last30Days: true},
-                    success: function(data) {
-                        console.log(data);
+
+                pastDate = new Date();
+                pastDate.setTime(pastDate.getTime() - ((24*60*60*1000) * 30));
+
+                for(var i=0; i<_self.changeLogData.length; i++) {
+                    itemDate = new Date(_self.changeLogData[i].clDate);
+                    if(itemDate.getTime() <= pastDate.getTime(pastDate)) {
+                        _self.changeLogData.splice(i,1);
                     }
-                });
+                }
 
                 _self.ShowOrHideAll = true;
             }
