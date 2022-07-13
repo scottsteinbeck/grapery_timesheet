@@ -26,7 +26,7 @@ component extends="coldbox.system.EventHandler" {
 		prc.changeLogData = queryExecute("
 			SELECT *
 			FROM change_log
-			-- LEFT JOIN TIME_ENTRY_FORM_V2 ON clTEFID = Time_Entry_Form_ROW_INDEX AND clReciept = RECIEPTNO AND clAction = 'add'
+			-- LEFT JOIN TIME_ENTRY_FORM_V3 ON clTEFID = ROW_INDEX AND clReciept = RECIEPTNO AND clAction = 'add'
 			WHERE clDate > :showToDate
 		",
 		{
@@ -44,7 +44,7 @@ component extends="coldbox.system.EventHandler" {
 
 		prc.jobcodes = queryExecute("
 			SELECT JOBCODES.description, JOBCODES.jobcode
-			FROM JOBCODES
+			FROM ArcGIS.gidata.JOBCODES
 			WHERE JOBCODES.GDB_TO_DATE = '9999-12-31 23:59:59.000'
 		",{},{ returnType = 'array'});
 
@@ -54,7 +54,7 @@ component extends="coldbox.system.EventHandler" {
 			POLYFIELD.field_acres1,
 			POLYFIELD.Variety_name,
 			POLYFIELD.field_name
-			FROM POLYFIELD
+			FROM ArcGIS.gidata.POLYFIELD
 			WHERE POLYFIELD.GDB_TO_DATE = '9999-12-31 23:59:59.000'
 		",{},{ returnType = 'array'});
 
@@ -64,17 +64,17 @@ component extends="coldbox.system.EventHandler" {
 			CREW.CrewLead,
 			CREW.CrewNumber,
 			CONTRACTOR.contractor_name
-			FROM CREW
-			LEFT JOIN CONTRACTOR ON CONTRACTOR.GlobalID = CREW.ContractorID
+			FROM ArcGIS.gidata.CREW
+			LEFT JOIN ArcGIS.gidata.CONTRACTOR ON CONTRACTOR.GlobalID = CREW.ContractorID
 			WHERE CREW.GDB_TO_DATE = '9999-12-31 23:59:59.000'
 			ORDER BY CrewLead
 		",{},{ returnType = 'array'});
 
 		prc.duplicateRecords = queryExecute("
-			SELECT Crew, FieldCode, JobCode, RECIEPTNO, `Date`, COUNT(*) AS numberOfDuplicates
-			FROM TIME_ENTRY_FORM_V2
+			SELECT Crew, FieldCode, JobCode, RECIEPTNO, Date, COUNT(*) AS numberOfDuplicates
+			FROM TIME_ENTRY_FORM_V3
 			WHERE deleteDate IS NULL
-			GROUP BY Crew, FieldCode, JobCode, RECIEPTNO, `Date`
+			GROUP BY Crew, FieldCode, JobCode, RECIEPTNO, Date
 			HAVING COUNT(*) > 2
 		",{ },{ returnType: "array" });
 

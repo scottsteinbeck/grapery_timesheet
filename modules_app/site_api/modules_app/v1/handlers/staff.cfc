@@ -59,12 +59,12 @@ component extends="BaseHandler" {
 				"email" : { "required" : true },
 				"first_name" : { "required" : true },
 				"last_name" : { "required" : true },
-				"can_login" : { "required" : true },
 				"require_reset" : { },
 				"password" : { },
 				"passwordConfirm" : { "sameAs" : "password" }
 			}
 		);
+		//result.oid = 0;
 
 		var user = getInstance( "User@site_core" ).create( result, true);
 		return event.getResponse().setData(user.getMemento());
@@ -88,7 +88,6 @@ component extends="BaseHandler" {
 				"email" : { "required" : true },
 				"first_name" : { "required" : true },
 				"last_name" : { "required" : true },
-				"can_login" : { "required" : true },
 				"password" : { },
 				"passwordConfirm" : { "sameAs" : "password" }
 			}
@@ -102,7 +101,6 @@ component extends="BaseHandler" {
                 "email",
                 "last_name",
                 "first_name",
-                "can_login"
             ] )
         );
 
@@ -117,8 +115,8 @@ component extends="BaseHandler" {
 	 * Delete a member
 	 * at this time the feature is disabled because users can only be activated/deactivated
 	 */
-	/* function delete( event, rc, prc ) {
+	function delete( event, rc, prc ) {
 		event.paramValue( "id", 0 );
-	} */
+	} 
 
 }

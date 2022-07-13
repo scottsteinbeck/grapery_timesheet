@@ -16,12 +16,12 @@
         }
     },
 	"datasources" : {
-		 "${DB_DATABASE}":{
+		 "grapery":{
 			 "host":"${DB_HOST}",
 			 "dbdriver":"${DB_DRIVER}",
 			 "database":"${DB_DATABASE}",
-			 "dsn":"jdbc:mysql://{host}:{port}/{database}",
-			 "custom":"useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=true&autoReconnect=true",
+			 "dsn":"jdbc:sqlserver://{host}:{port}/{database}",
+			 "custom":"sendStringParametersAsUnicode=true;SelectMethod=direct",
 			 "port":"${DB_PORT}",
 			 "class":"${DB_CLASS}",
 			 "username":"${DB_USER}",

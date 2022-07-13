@@ -156,7 +156,7 @@
 
             timeEntryFormColNms: [
                     "BlockID", "Crew",
-                    "FieldCode", "TIME_ENTRY_FORM_V2.JobCode", "Date",
+                    "FieldCode", "TIME_ENTRY_FORM_V3.JobCode", "Date",
                     "QC_Average", "Totalvines", "QC_Hours",
                     "TotalCalculatedTime",
                     "RECIEPTNO",

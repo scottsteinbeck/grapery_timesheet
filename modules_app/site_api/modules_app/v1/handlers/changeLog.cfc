@@ -47,18 +47,18 @@ component extends="BaseHandler"{
                 // dump(Left(setItems, len(setItems)-2)); abort;
 
                 queryExecute("
-                    UPDATE TIME_ENTRY_FORM_V2
+                    UPDATE TIME_ENTRY_FORM_V3
                     SET " & Left(setItems, len(setItems)-2) & "
-                    WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormIndex
+                    WHERE ROW_INDEX = :timeEntryFormIndex
                 ", params);
                 break;
 
             // case "add":
             case "copy":
                 queryExecute("
-                    UPDATE TIME_ENTRY_FORM_V2
+                    UPDATE TIME_ENTRY_FORM_V3
                     SET deleteDate = :currentDate
-                    WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormIndex
+                    WHERE ROW_INDEX = :timeEntryFormIndex
                 ",{
                     timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer" },
                     currentDate = { value = now(), cfsqltype = "cf_sql_date" }
@@ -67,9 +67,9 @@ component extends="BaseHandler"{
 
             case "delete":
                 queryExecute("
-                    UPDATE TIME_ENTRY_FORM_V2
+                    UPDATE TIME_ENTRY_FORM_V3
                     SET deleteDate = NULL
-                    WHERE Time_Entry_Form_ROW_INDEX = :timeEntryFormIndex
+                    WHERE ROW_INDEX = :timeEntryFormIndex
                 ",{
                     timeEntryFormIndex = { value = rc.id, cfsqltype = "cf_sql_integer" }
                 });

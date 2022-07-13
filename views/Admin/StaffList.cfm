@@ -97,11 +97,6 @@
 					<b-form-input id="email-input" v-model="$v.form.email.$model" :state="validateState('email')"></b-form-input>
 				</b-form-group>
 
-				<b-form-group label-cols-sm="4" label-cols-lg="3" label="Can Login" label-for="can-login-input">
-					<b-form-checkbox value="1" unchecked-value="0" v-model="$v.form.can_login.$model" id="can-login-input" switch>
-						{{ $v.form.can_login.$model == 1 ? 'YES' : 'NO' }}
-					</b-form-checkbox>
-				</b-form-group>
 
 				<b-form-group label-cols-sm="4" label-cols-lg="3" label="Password" label-for="password-input">
 					<b-form-input id="password-input" v-model="$v.form.password.$model" :state="validateState('password')"></b-form-input>
@@ -158,7 +153,6 @@
 				},
 				passwordConfirm: { sameAsPassword: vvd.sameAs('password') },
 				role: {},
-				can_login: {},
 			},
 		},
 		methods: {
@@ -212,7 +206,6 @@
 					phone: null,
 					first_name: null,
 					last_name: null,
-					can_login: 1,
 					role: 4,
 				}
 				for (var i in this.form) {

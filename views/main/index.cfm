@@ -7,7 +7,7 @@
         <div class="col-2">
 
             <select class="form-control form-select m-2" id="filterCol" v-model="filterCol">
-                <option :selected="col.title == 'Field'" v-for="col in options.colModel" v-if="col.title != 'Edit'" :value="col.dataIndx">{{col.title}}</option>
+                <option :selected="col.title == 'Field'" v-for="col in filterColumns" v-if="col.title != 'Edit'" :value="col.dataIndx">{{col.title}}</option>
             </select>
         </div>
         <div class="col-2">
@@ -268,6 +268,15 @@
     var app = new Vue({
         el: '#app',
         // data1: timeEntryForm,
+        computed: {
+            filterColumns: function(){
+                var nonFilterColumns = ['employeeHours','vines_per_acre','vineacres','employeeAcresPerHr','acresPerHour'];       
+                return this.options.colModel.filter(function(x){
+                    return !!x.dataIndx && nonFilterColumns.indexOf(x.dataIndx) == -1;
+                })
+
+            }
+        },
         methods: {
             onExport: function() {
                 debugger;
@@ -345,7 +354,7 @@
                                     method: "POST",
                                     data: {newRowData: JSON.stringify(newRowData)},
                                     success: function(data){
-                                        newRowData.Time_Entry_Form_ROW_INDEX = data.GENERATEDKEY;
+                                        newRowData.ROW_INDEX = data.GENERATEDKEY;
                                         newRowData.contractor_name = data.EXTRAROWDATA.contractor_name;
                                         newRowData.field_acres1 = data.EXTRAROWDATA.field_acres1;
                                         newRowData.vine_count = data.EXTRAROWDATA.vine_count;
@@ -493,7 +502,7 @@
                                     $.ajax({
                                         url: "/api/v1/timeEntrys",
                                         method: "POST",
-                                        data: { rowIdx: ui.rowData.Time_Entry_Form_ROW_INDEX,
+                                        data: { rowIdx: ui.rowData.ROW_INDEX,
                                             copyReciept: ui.rowData.RECIEPTNO.split("_")[0]
                                         },
                                         success: (function(data){
@@ -529,7 +538,7 @@
                                                     $( this ).dialog( "close" );
                                                     
                                                     _self.showLoading();
-                                                    deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.Time_Entry_Form_ROW_INDEX;
+                                                    deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.ROW_INDEX;
                                                     $.ajax({
                                                         url: deleteUrl,
                                                         method: "DELETE",
@@ -598,7 +607,7 @@
                                                     rowData = _self.getRowData({ rowIndx: ui.rowIndx });
 
                                                     $.ajax({
-                                                        url: "/api/v1/timeEntrys/" + rowData.Time_Entry_Form_ROW_INDEX,
+                                                        url: "/api/v1/timeEntrys/" + rowData.ROW_INDEX,
                                                         method: "PUT",
                                                         data: { newRowData: JSON.stringify(rowData), 
                                                             oldRowData: JSON.stringify(oldRowData) }
@@ -678,7 +687,7 @@
 
                     { title: "Total Cost", width: 100, dataIndx: "total", dateType: "float", editable: false },
 
-                    // { title: "temp", width: 100, dataIndx: "Time_Entry_Form_ROW_INDEX", dataType: "string", editable: true },
+                    // { title: "temp", width: 100, dataIndx: "ROW_INDEX", dataType: "string", editable: true },
                 ],
             };
 
