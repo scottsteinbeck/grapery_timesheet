@@ -17,8 +17,35 @@ component extends="BaseHandler"{
 		// 	abort;
 		// }
 
-		selectItems = arrayMerge(getQueryColNames(true), [
-            "pSeason", "pLeader", "pAssistant", "pQC", "pFieldWorker",
+		var employee_hrs ="coalesce(cast(Total_Hours as numeric),0)";
+		var leader_hrs ="coalesce(cast(TimeDiff as numeric) / 60,0)";
+		var assistant_hrs ="COALESCE(((cast(TimeDiff2nd as numeric) + cast(TimeDiff3rd as numeric))/60),0)";
+		var inspector_hours ="COALESCE(cast(QC_Hours as numeric),0)";
+		var total_hours = "#employee_hrs# + #leader_hrs# + #assistant_hrs# + #inspector_hours#";
+		selectItems = [
+            "BlockID", "Crew", "FieldCode", "Time_Entry_Form_v4.JobCode", "QC_Average", "Totalvines", 
+			
+			"coalesce(cast(Total_Hours as numeric),0) as Total_Hours", 
+			"coalesce(cast(QC_Hours as numeric),0) as QC_Hours", 
+			"coalesce(cast(TimeDiff as numeric),0) as TimeDiff", 
+			"coalesce(cast(TimeDiff2nd as numeric),0) as TimeDiff2nd", 
+			"coalesce(cast(TimeDiff3rd as numeric),0) as TimeDiff3rd",
+			"#employee_hrs# as employee_hrs",
+			"#leader_hrs# as leader_hrs",
+			"#assistant_hrs# as assistant_hrs",
+			"#inspector_hours# as inspector_hours",
+
+			"costOverride",
+			"Totalunits",
+			"TotalCalculatedTime",
+			"ROW_INDEX",
+			"RECIEPTNO",
+			"FORMAT (Time_Entry_Form_v4.Date, 'yyyy-MM-dd') AS Date",
+            "pSeason", 
+			"pLeader", 
+			"pAssistant", 
+			"pQC", 
+			"pFieldWorker",
 			
 			"vine_count",
 			"Variety_name",
@@ -27,20 +54,19 @@ component extends="BaseHandler"{
 
 			"field_acres1",
 
-			"(TotalCalculatedTime) AS employeeHours",
+			"round((CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT)),2) AS vines_per_acre",
 			
-			"(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT)) AS vines_per_acre",
-			
-			"(COALESCE (TimeDiff,0)*pLeader)+(COALESCE (TimeDiff2nd,0)*pAssistant)+(COALESCE (TimeDiff3rd,0)*pAssistant)+(COALESCE (QC_Hours,0)*pQC) AS total,ROUND((Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))),2) AS vineacres",
+			"( #leader_hrs# * pLeader ) + ( #assistant_hrs# * pAssistant)  + ( #inspector_hours# * pQC)  + ( #employee_hrs# * pFieldWorker) + (CASE WHEN Time_Entry_Form_v4.jobcode = 4940 THEN (CAST (Totalunits AS FLOAT) * 0.6832 ) ELSE 0 END)  AS total",
+			"ROUND((Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))),2) AS vineacres",
 
 			// employeeHours / vineacres = employeeAcresPerHr
-			"CASE WHEN Totalvines> 0 THEN (TotalCalculatedTime)/(Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))) ELSE 0 END AS employeeAcresPerHr",
+			"CASE WHEN Totalvines> 0 THEN ROUND((#total_hours#)/(Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))),2) ELSE 0 END AS employeeAcresPerHr",
 			
 			// total / vineacres = acresPerHour
-			"CASE WHEN Totalvines> 0 THEN ROUND(((COALESCE (TimeDiff,0)*pLeader)+(COALESCE (TimeDiff2nd,0)*pAssistant)+(COALESCE (TimeDiff3rd,0)*pAssistant)+(COALESCE (QC_Hours,0)*pQC))/(Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))),2) ELSE 0 END AS acresPerHour",
+			"CASE WHEN Totalvines> 0 THEN ROUND((( #leader_hrs# * pLeader ) + ( #assistant_hrs# * pAssistant) + ( #inspector_hours# * pQC) + ( #employee_hrs# * pFieldWorker) )/(Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))),2) ELSE 0 END AS acresPerHour",
 
-			"CREW.CrewName"
-		]);
+			"PTCREW.CrewName"
+		];
 
 		if(rc.keyExists("pq_sort")) {
 			var usendingOrDesending = (deserializeJSON(rc.pq_sort)[1].dir == "up") ? "desc" : "asc";
@@ -50,26 +76,26 @@ component extends="BaseHandler"{
 		}
 		else {
 			var usendingOrDesending = "desc";
-			var sortBy = "Date";
+			var sortBy = "Time_Entry_Form_v4.Date";
 		}
 
-		var timeEntryForm = qb.newQuery().from('TIME_ENTRY_FORM_V3')
+		var timeEntryForm = qb.newQuery().from('Time_Entry_Form_v4')
 			.selectRaw(selectItems.toList(', '))
 			.leftJoin('ArcGIS.gidata.JOBCODES', function(j){
-				j.on('TIME_ENTRY_FORM_V3.JobCode', '=', 'ArcGIS.gidata.JOBCODES.jobcode');
-				j.where('ArcGIS.gidata.JOBCODES.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_VARCHAR"});
+				j.on('Time_Entry_Form_v4.JobCode', '=', 'ArcGIS.gidata.JOBCODES.jobcode');
+				j.where('ArcGIS.gidata.JOBCODES.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_TIMESTAMP"});
 			})
-			.leftJoin('ArcGIS.gidata.CREW', function(j){
-				j.on('TIME_ENTRY_FORM_V3.Crew', '=', 'ArcGIS.gidata.CREW.CrewNumber');
-				j.where('ArcGIS.gidata.CREW.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_VARCHAR"});
+			.leftJoin('ArcGIS.gidata.PTCREW', function(j){
+				j.on('Time_Entry_Form_v4.Crew', '=', 'ArcGIS.gidata.PTCREW.CrewNumber');
+				j.where('ArcGIS.gidata.PTCREW.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_TIMESTAMP"});
 			})
 			.leftJoin('ArcGIS.gidata.POLYFIELD', function(j){
-				j.on('TIME_ENTRY_FORM_V3.FieldCode' , '=', 'ArcGIS.gidata.POLYFIELD.field_name');
-				j.where('ArcGIS.gidata.POLYFIELD.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_VARCHAR"});
+				j.on('Time_Entry_Form_v4.FieldCode' , '=', 'ArcGIS.gidata.POLYFIELD.field_name');
+				j.where('ArcGIS.gidata.POLYFIELD.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_TIMESTAMP"});
 			})
 			.leftJoin('ArcGIS.gidata.CONTRACTOR', function(j) {
-				j.on('ArcGIS.gidata.CONTRACTOR.GlobalID', '=', 'ArcGIS.gidata.CREW.ContractorID');
-				// j.where('CONTRACTOR.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_TIMESTAMP"});
+				j.on('ArcGIS.gidata.CONTRACTOR.GlobalID', '=', 'ArcGIS.gidata.PTCREW.ContractorID');
+				j.where('CONTRACTOR.GDB_TO_DATE', '=', {value:'9999-12-31 23:59:59.000', cfsqltype = "CF_SQL_TIMESTAMP"});
 			})
 			.leftJoin('payrates', (j) => {
 				j.on('payrates.pSeason', j.raw('YEAR(Date)'));
@@ -90,6 +116,8 @@ component extends="BaseHandler"{
 				q.where(rc.filterCol, filterTp, rc.filterData);
 			})
 			.whereNull('deleteDate')
+			.andWhere('Time_Entry_Form_v4.JobCode','=',{value:'4940', cfsqltype = "CF_SQL_INTEGER"})
+			.andWhere('VerificationType','=',{value:'1', cfsqltype = "CF_SQL_INTEGER"})
 			// .toSQL();
 			.paginate(pq_curpage, rc.pq_rpp);
 
@@ -107,7 +135,7 @@ component extends="BaseHandler"{
 			
 			numberOfCopys = queryExecute("
 				SELECT COUNT(*) AS copys
-				FROM TIME_ENTRY_FORM_V3
+				FROM Time_Entry_Form_v4
 				WHERE RECIEPTNO like :copyReciept AND deleteDate IS NULL
 			",{
 				copyReciept = { value = rc.copyReciept & "_%", cfsqltype="cf_sql_string" }
@@ -118,9 +146,9 @@ component extends="BaseHandler"{
 			// dump(newRecieptName); abort;
 
 			queryExecute("
-				INSERT INTO TIME_ENTRY_FORM_V3(Date, JobCode, Crew, JobDescription, ContractorID, Contractor, FieldCode, Name, `In`, `Out`, ID, FirstName, LastName, ID1, Name1, In1, Out1, FirstName1, LastName1, ID2, Name2, In2, Out2, FirstName2, LastName2, Totalunits, Totalvines, StartTime, fulllunchstart, fulllunchstop, Stoptime, VerificationType, RECIEPTNO, QC_Name, QC_Hours, Unitcheck, Verification, ROW_INDEX, TotalCalculatedTime, TotalActualTime, ACTUALMINUTES, AdditionalCrewActual, QC_Average, BlockID, crewstartampm, FullStartTime, crewstopampm, Full_Stop_Time, Break1, Break2, Lunch_in, lunchinampm, Lunch_Out, lunchoutampm, vinecountcheck, Actual_Hours, TimeDiff, TimeDiff2nd, TimeDiff3rd, deleteDate) 
-				SELECT Date, JobCode, Crew, JobDescription, ContractorID, Contractor, FieldCode, Name, `In`, `Out`, ID, FirstName, LastName, ID1, Name1, In1, Out1, FirstName1, LastName1, ID2, Name2, In2, Out2, FirstName2, LastName2, Totalunits, Totalvines, StartTime, fulllunchstart, fulllunchstop, Stoptime, VerificationType, :recieptnoVal, QC_Name, QC_Hours, Unitcheck, Verification, ROW_INDEX, TotalCalculatedTime, TotalActualTime, ACTUALMINUTES, AdditionalCrewActual, QC_Average, BlockID, crewstartampm, FullStartTime, crewstopampm, Full_Stop_Time, Break1, Break2, Lunch_in, lunchinampm, Lunch_Out, lunchoutampm, vinecountcheck, Actual_Hours, TimeDiff, TimeDiff2nd, TimeDiff3rd, deleteDate
-				FROM TIME_ENTRY_FORM_V3
+				INSERT INTO Time_Entry_Form_v4([DATE], [JobCode], [Crew], [JobDescription], [ContractorID], [Contractor], [FieldCode], [ID1], [Name1], [In1], [Out1], [FirstName1], [LastName1], [TimeDiff2nd], [Totalunits], [Totalvines], [StartTime], [fulllunchstart], [fulllunchstop], [Stoptime], [VerificationType], [RECIEPTNO], [QC_Name], [QC_Hours], [Unitcheck], [Verification], [Total_Hours], [break1startampm], [Break1Stop], [break1stopampm], [break2startampm], [Break2Stop], [break2stopampm], [ID], [NAME], [IN], [OUT], [FirstName], [LastName], [TimeDiff], [ID2], [Name2], [In2], [Out2], [LastName2], [FirstName2], [TimeDiff3rd], [Scan_Date], [TotalCalculatedTime], [TotalActualTime], [ACTUALMINUTES], [AdditionalCrewActual], [QC_Average], [deleteDate], [BlockID]) 
+				SELECT [DATE], [JobCode], [Crew], [JobDescription], [ContractorID], [Contractor], [FieldCode], [ID1], [Name1], [In1], [Out1], [FirstName1], [LastName1], [TimeDiff2nd], [Totalunits], [Totalvines], [StartTime], [fulllunchstart], [fulllunchstop], [Stoptime], [VerificationType], :recieptnoVal, [QC_Name], [QC_Hours], [Unitcheck], [Verification], [Total_Hours], [break1startampm], [Break1Stop], [break1stopampm], [break2startampm], [Break2Stop], [break2stopampm], [ID], [NAME], [IN], [OUT], [FirstName], [LastName], [TimeDiff], [ID2], [Name2], [In2], [Out2], [LastName2], [FirstName2], [TimeDiff3rd], [Scan_Date], [TotalCalculatedTime], [TotalActualTime], [ACTUALMINUTES], [AdditionalCrewActual], [QC_Average], [deleteDate], [BlockID]
+				FROM Time_Entry_Form_v4
 				WHERE ROW_INDEX = :timeEntryFormRowIndex
 			",{
 				timeEntryFormRowIndex = { value = deserializeJSON(rc.rowIdx), cfsqltype = "cf_sql_integer"},
@@ -159,19 +187,19 @@ component extends="BaseHandler"{
 
 			if(arrayLen(colNamesToQry) > 0){
 				queryExecute("
-					INSERT INTO TIME_ENTRY_FORM_V3 (" & arrayToList(colNamesToQry, ',') & ")
+					INSERT INTO Time_Entry_Form_v4 (" & arrayToList(colNamesToQry, ',') & ")
 					VALUES (" & ':' & arrayToList(colNamesToQry, ', :') & ")
 				",newRowsToQry , { result="newRecord" });
 			}
 
 			extraRowData = queryExecute("
 				SELECT TOP 1 CONTRACTOR.contractor_name, POLYFIELD.field_acres1, vine_count
-				FROM TIME_ENTRY_FORM_V3
-				LEFT JOIN ArcGIS.gidata.CREW ON TIME_ENTRY_FORM_V3.Crew = ArcGIS.gidata.CREW.CrewNumber
-				LEFT JOIN ArcGIS.gidata.CONTRACTOR ON ArcGIS.gidata.CONTRACTOR.GlobalID = ArcGIS.gidata.CREW.ContractorID
-				LEFT JOIN ArcGIS.gidata.POLYFIELD ON TIME_ENTRY_FORM_V3.FieldCode = ArcGIS.gidata.POLYFIELD.field_name
-				WHERE TIME_ENTRY_FORM_V3.ROW_INDEX = :tefID 
-					AND ArcGIS.gidata.CREW.GDB_TO_DATE = '9999-12-31 23:59:59.000' 
+				FROM Time_Entry_Form_v4
+				LEFT JOIN ArcGIS.gidata.PTCREW ON Time_Entry_Form_v4.Crew = ArcGIS.gidata.PTCREW.CrewNumber
+				LEFT JOIN ArcGIS.gidata.CONTRACTOR ON ArcGIS.gidata.CONTRACTOR.GlobalID = ArcGIS.gidata.PTCREW.ContractorID
+				LEFT JOIN ArcGIS.gidata.POLYFIELD ON Time_Entry_Form_v4.FieldCode = ArcGIS.gidata.POLYFIELD.field_name
+				WHERE Time_Entry_Form_v4.ROW_INDEX = :tefID 
+					AND ArcGIS.gidata.PTCREW.GDB_TO_DATE = '9999-12-31 23:59:59.000' 
 					AND ArcGIS.gidata.CONTRACTOR.GDB_TO_DATE = '9999-12-31 23:59:59.0000000'
 			",{
 				tefID = { value = newRecord.generatedKey, cfsqltype="cf_sql_integer" }
@@ -218,7 +246,7 @@ component extends="BaseHandler"{
 			}
 		}
 		queryExecute("
-			UPDATE TIME_ENTRY_FORM_V3
+			UPDATE Time_Entry_Form_v4
 			SET " & arrayToList(updateQry, ',') & "
 			WHERE ROW_INDEX = :tefRowIndex
 		", updateDataQry);
@@ -240,7 +268,7 @@ component extends="BaseHandler"{
 		// abort;
 
 		queryExecute("
-			UPDATE TIME_ENTRY_FORM_V3
+			UPDATE Time_Entry_Form_v4
 			SET deleteDate = :currentDate
 			WHERE ROW_INDEX = :id
 		",{

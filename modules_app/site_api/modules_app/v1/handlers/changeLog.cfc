@@ -47,7 +47,7 @@ component extends="BaseHandler"{
                 // dump(Left(setItems, len(setItems)-2)); abort;
 
                 queryExecute("
-                    UPDATE TIME_ENTRY_FORM_V3
+                    UPDATE Time_Entry_Form_v4
                     SET " & Left(setItems, len(setItems)-2) & "
                     WHERE ROW_INDEX = :timeEntryFormIndex
                 ", params);
@@ -56,7 +56,7 @@ component extends="BaseHandler"{
             // case "add":
             case "copy":
                 queryExecute("
-                    UPDATE TIME_ENTRY_FORM_V3
+                    UPDATE Time_Entry_Form_v4
                     SET deleteDate = :currentDate
                     WHERE ROW_INDEX = :timeEntryFormIndex
                 ",{
@@ -67,7 +67,7 @@ component extends="BaseHandler"{
 
             case "delete":
                 queryExecute("
-                    UPDATE TIME_ENTRY_FORM_V3
+                    UPDATE Time_Entry_Form_v4
                     SET deleteDate = NULL
                     WHERE ROW_INDEX = :timeEntryFormIndex
                 ",{

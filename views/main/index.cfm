@@ -54,21 +54,41 @@
         return `<div class="overflow-auto container" style="max-height: 60vh">
                 `+ ((rowDt) ? '' : addHtml) +`
                 <div class='row'>
+                    <div class="form-group col-4">
+                        <label for='Date'>Date</label>
+                        <input type='date' id='Date' class="form-control" value="`+ rowDt?.Date +`">
+                    </div>
+
+                    <div class="form-group col-8">
+                        <label for="JobCode">Jobcode Name</label>
+                        <select id="JobCode" class="form-control">
+                            ` + jobcodes.reduce(function(acc, x){
+                                var opiningOptionTag = "<option" +( (x.jobcode == rowDt?.JobCode) ? " selected = selected " : "" )+ " value='"+ x.jobcode +"'>";
+                                var closingOptionTag = "</option>";
+                                acc += opiningOptionTag + x.description + closingOptionTag;
+                                return acc;
+                            }) + `
+                        </select>
+                    </div>
+                </div>
+
+                <div class='row mt-3'>  
+
+
                     <div class="form-group col-6">
-                        <label for='crew'>Crew</label>
-                        <select id='crew' value="`+ rowDt?.Crew + `" class="form-control">
+                        <label for='Crew'>Crew</label>
+                        <select id='Crew' value="`+ rowDt?.Crew + `" class="form-control">
                             ` + crew.reduce(function(acc, x){
                                 var opiningOptionTag = "<option" +( (x.CrewNumber == rowDt?.Crew) ? " selected = selected " : "" )+ " value='"+ x.CrewNumber +"'>";
                                 var closingOptionTag = "</option>";
-                                acc += opiningOptionTag + x.CrewLead + closingOptionTag;
+                                acc += opiningOptionTag + x.CrewNumber + ' - ' + x.CrewLead + closingOptionTag;
                                 return acc;
                             }, "") + `
                         </select>
                     </div>
-                
                     <div class="form-group col-6">
-                        <label for="field">Field</label>
-                        <select id="field" class="form-control">
+                        <label for="FieldCode">Field</label>
+                        <select id="FieldCode" class="form-control">
                             ` + polyfield.reduce(function(acc, x){
                                 var opiningOptionTag = "<option" +( (x.field_name == rowDt?.FieldCode) ? " selected = selected " : "" )+ ">";
                                 var closingOptionTag = "</option>";
@@ -79,63 +99,57 @@
                     </div>
                 </div>
 
-                <br>
-
-                <div class='row'>
-                    <div class="form-group col-6">
-                        <label for='crewData'>Crew Date</label>
-                        <input type='date' id='crewData' class="form-control" value="`+ rowDt?.Date +`">
+                <div class='row mt-3'>  
+                    <div class="form-group col-4">
+                        <label for='Totalvines'>Total Vines</label>
+                        <input type='number' id='Totalvines' class="form-control" value="`+ rowDt?.Totalvines +`">
                     </div>
+                    <div class="form-group col-4">
+                        <label for='Totalunits'>Total Units</label>
+                        <input type='number' id='Totalunits' class="form-control" value="`+ rowDt?.Totalunits +`">
+                    </div>
+                    <div class="form-group col-4">
+                        <label for='costOverride'>Total Cost Override</label>
+                        <input type='number' id='costOverride' class="form-control" value="`+ rowDt?.costOverride +`">
+                    </div>
+                </div>
+                <hr/>
 
-                    <div class="form-group col-6">
-                        <label for='qcAverage'>Quality Score</label>
-                        <input type='number' id='qcAverage' class="form-control" value="`+ rowDt?.QC_Average +`">
+                <div class='row mt-2'>
+                   
+                    <div class="form-group col-4">
+                        <label for='QC_Average'>Quality Score</label>
+                        <input type='number' id='QC_Average' class="form-control" value="`+ rowDt?.QC_Average +`">
+                    </div>
+                    <div class="form-group col-4">
+                        <label for='Total_Hours'>Employee</label>
+                        <input type='number' id='Total_Hours' class="form-control" value="`+ rowDt?.Total_Hours +`">
+                        <div class="form-text text-muted">Hours</div>
+                    </div>
+                    <div class="form-group col-4">
+                        <label for='TimeDiff'>Leader</label>
+                        <input type='number' id='TimeDiff' class="form-control" value="`+ rowDt?.TimeDiff +`">
+                        <div class="form-text text-muted">Minutes</div>
                     </div>
                 </div>
 
-                <br>
-
-                <div class='row'>
-                    <div class="form-group col-6">
-                        <label for='totalVines'>Total Vines</label>
-                        <input type='number' id='totalVines' class="form-control" value="`+ rowDt?.Totalvines +`">
+                <div class='row mt-2'>
+                    <div class="form-group col-4">
+                        <label for='TimeDiff2nd'>Assistant</label>
+                        <input type='number' id='TimeDiff2nd' class="form-control" value="`+ rowDt?.TimeDiff2nd +`">
+                        <div class="form-text text-muted">Minutes</div>
                     </div>
-
-                    <div class="form-group col-6">
-                        <label for='leaderHours'>Leader Hours</label>
-                        <input type='number' id='leaderHours' class="form-control" value="`+ rowDt?.TimeDiff +`">
+                    <div class="form-group col-4">
+                        <label for='TimeDiff3rd'>Assistant 2</label>
+                        <input type='number' id='TimeDiff3rd' class="form-control" value="`+ rowDt?.TimeDiff3rd +`">
+                        <div class="form-text text-muted">Minutes</div>
                     </div>
-                </div>
-
-                <br>
-
-                <div class='row'>
-                    <div class="form-group col-6">
-                        <label for='assistantHours'>Assistant Hours</label>
-                        <input type='number' id='assistantHours' class="form-control" value="`+ rowDt?.TimeDiff2nd +`">
-                    </div>
-
-                    <div class="form-group col-6">
-                        <label for='qcHours'>Inspector Hours</label>
-                        <input type='number' id='qcHours' class="form-control" value="`+ rowDt?.QC_Hours +`">
+                    <div class="form-group col-4">
+                        <label for='QC_Hours'>Inspector</label>
+                        <input type='number' id='QC_Hours' class="form-control" value="`+ rowDt?.QC_Hours +`">
+                        <div class="form-text text-muted">Hours</div>
                     </div>
                 </div>
-
-                <br>
-
-                <div class="form-group">
-                    <label for="jobcodes">Jobcode Name</label>
-                    <select id="jobcodes" class="form-control">
-                        ` + jobcodes.reduce(function(acc, x){
-                            var opiningOptionTag = "<option" +( (x.jobcode == rowDt?.JobCode) ? " selected = selected " : "" )+ " value='"+ x.jobcode +"'>";
-                            var closingOptionTag = "</option>";
-                            acc += opiningOptionTag + x.description + closingOptionTag;
-                            return acc;
-                        }) + `
-                    </select>
-                </div>
-
-                <br>
             </div>
         `;
     }
@@ -178,58 +192,79 @@
         }, 0);
     }
 
+    function toNumber(value){
+        if(!isNaN(parseFloat(value))) return parseFloat(value);
+        return 0
+    }
+
     var calculateRow = function(rowData) {
 
-        rowData.polyfield = polyfieldByFieldName[rowData.FieldCode]?.displayName;
-        rowData.vine_count = polyfieldByFieldName[rowData.FieldCode]?.vine_count;
-        rowData.field_acres1 = polyfieldByFieldName[rowData.FieldCode]?.field_acres1;
+        //Pull in joined Field Data
+        var getField = polyfield.filter(function(x){ return x.field_name == rowData.FieldCode; });
+        if(getField.length){
+            rowData.Variety_name = getField[0].Variety_name;
+            rowData.field_acres1 = getField[0].field_acres1;
+            rowData.field_name = getField[0].field_name;
+            rowData.vine_count = getField[0].vine_count;
+        }
 
-        rowData.crew_info = crewByOid[rowData.Crew];
+        //Pull in joined Crew Data
+        var getCrew = crew.filter(function(x){ return x.CrewNumber == rowData.Crew; });
+        if(getField.length){
+            rowData.CrewLead = getCrew[0].CrewLead;
+            rowData.CrewName = getCrew[0].CrewName;
+            rowData.contractor_name = getCrew[0].contractor_name;
+        }
 
-        if(rowData.BlockID == undefined) rowData.BlockID = "";
+
+        //Calculate Hours
+        rowData.employee_hrs =  toNumber(rowData.Total_Hours);
+        rowData.leader_hrs =    numberFormat(toNumber(rowData.TimeDiff)/60);
+
+        var assistant_hrs1 =     numberFormat(toNumber(rowData.TimeDiff2nd)/60);
+        var assistant_hrs2 =     numberFormat(toNumber(rowData.TimeDiff3rd)/60);
+        rowData.assistant_hrs = assistant_hrs1 + assistant_hrs2;
+        rowData.inspector_hours = toNumber(rowData.QC_Hours);
+
+        //Calculate Total Cost
+        rowData.costOverride = toNumber(rowData.costOverride);
+        if(rowData.costOverride > 0 ) {
+            rowData.total = rowData.costOverride
+        } else {
+            var pLeader = 0;
+            var pAssistant = 0;
+            var pFieldWorker = 0;
+            var pQC = 0;
+            if(payrates[new Date(rowData.Date).getFullYear()] != undefined){
+                rowYear = new Date(rowData.Date).getFullYear()
+                pLeader = payrates[rowYear].pLeader;
+                pAssistant = payrates[rowYear].pAssistant;
+                pFieldWorker = payrates[rowYear].pFieldWorker;
+                pQC = payrates[rowYear].pQC;
+            }
+            rowData.total = sumArray([
+                (rowData.employee_hrs * pFieldWorker), 
+                (rowData.leader_hrs * pLeader), 
+                (rowData.assistant_hrs * pAssistant), 
+                (rowData.inspector_hours * pQC)
+            ]);
+            if(rowData.JobCode == '4940') rowData.total += ( toNumber(rowData.Totalunits) * 0.6832)
+        }
+        rowData.total= numberFormat(rowData.total);
+
 
         rowData.vines_per_acre = 0;
-        if( !isNaN(rowData.vine_count) && !isNaN(parseFloat(rowData.field_acres1))){
-            rowData.vines_per_acre = numberFormat(rowData.vine_count / parseFloat(rowData.field_acres1));
+        rowData.field_acres1 = toNumber(rowData.field_acres1);
+        rowData.vine_count = toNumber(rowData.vine_count);
+        if( rowData.vine_count > 0 && rowData.field_acres1 > 0){
+            rowData.vines_per_acre = numberFormat(rowData.vine_count / rowData.field_acres1);
         }
 
-        rowData.employeeHours = 0;
-        rowData.LeaderHours = 0;
-        rowData.AssistantHours = 0;
-        if( !isNaN(parseFloat(rowData.QC_Hours))){
-            rowData.QC_Hours = parseFloat(rowData.QC_Hours);
-        } else {
-            rowData.QC_Hours = 0;
-        }
-
-        if(!rowData.TotalCalculatedTime){
-            // rowData.TotalCalculatedTime = rowData.TimeDiff + rowData.TimeDiff2nd + rowData.TimeDiff3rd;
-            rowData.TotalCalculatedTime = 0;
-            if(rowData.TimeDiff > 0) rowData.TotalCalculatedTime += parseFloat(rowData.TimeDiff);
-            if(rowData.TimeDiff2nd > 0) rowData.TotalCalculatedTime += parseFloat(rowData.TimeDiff2nd);
-            if(rowData.TimeDiff3rd > 0) rowData.TotalCalculatedTime += parseFloat(rowData.TimeDiff3rd);
-        }
-
-        if( new Date(rowData.TotalCalculatedTime) != 'Invalid Date'){
-            rowData.employeeHours = new Date(rowData.TotalCalculatedTime).getHours();
-        } else if( !isNaN(rowData.TotalCalculatedTime)){
-            rowData.employeeHours = parseFloat(rowData.TotalCalculatedTime);
-        }
-
-        var pLeader = 0;
-        var pAssistant = 0;
-        var pQC = 0;
-        if(payrates[new Date(rowData.Date).getFullYear()] != undefined){
-            rowYear = new Date(rowData.Date).getFullYear()
-            pLeader = payrates[rowYear].pLeader;
-            pAssistant = payrates[rowYear].pAssistant;
-            pQC = payrates[rowYear].pQC;
-        }
-        rowData.total = sumArray([(rowData.TimeDiff * pLeader), (rowData.TimeDiff2nd * pAssistant), (rowData.TimeDiff3rd * pAssistant), (rowData.QC_Hours * pQC)]);
-
+        // Calculate vineacres, employeeAcresPerHr, acresPerHour
         rowData.vineacres = 0;
-        if( rowData.vines_per_acre && !isNaN(parseFloat(rowData.Totalvines))){
-            rowData.vineacres = numberFormat(parseFloat(rowData.Totalvines)/rowData.vines_per_acre);
+        rowData.Totalvines = toNumber(rowData.Totalvines);
+        if( rowData.vines_per_acre > 0 && rowData.Totalvines > 0){
+            rowData.vineacres = rowData.Totalvines/rowData.vines_per_acre;
         }
 
         rowData.employeeAcresPerHr = 0;
@@ -241,6 +276,8 @@
         if( rowData.vineacres > 0){
             rowData.acresPerHour = numberFormat(rowData.total/rowData.vineacres);
         }
+
+        rowData.vineacres = numberFormat(rowData.vineacres);
         
         return rowData;
     }
@@ -272,7 +309,7 @@
             filterColumns: function(){
                 var nonFilterColumns = ['employeeHours','vines_per_acre','vineacres','employeeAcresPerHr','acresPerHour'];       
                 return this.options.colModel.filter(function(x){
-                    return !!x.dataIndx && nonFilterColumns.indexOf(x.dataIndx) == -1;
+                    return !!x.dataIndx && nonFilterColumns.indexOf(x.dataIndx) == -1 && !x.hidden;
                 })
 
             }
@@ -332,19 +369,22 @@
                             click: function() {
                             
                                 var newRowData = {
-                                    RECIEPTNO: $('#reciept').val(),
-                                    Crew: $('#crew').val(),
-                                    FieldCode: $('#field').val(),
-                                    Date: $('#crewData').val(),
-                                    QC_Average: $('#qcAverage').val(),
-                                    Totalvines: $('#totalVines').val(),
-                                    TimeDiff2nd: $('#assistantHours').val(),
-                                    TimeDiff: $('#leaderHours').val(),
-                                    QC_Hours: $('#qcHours').val(),
-                                    description: jobcodesByJobcode[$('#jobcodes').val()],
-                                    BlockID: $('#blockID').val(),
-                                    JobCode: $('#jobcodes').val()
+                                    Date: $('#Date').val(),
+                                    JobCode: $('#JobCode').val(),
+                                    Crew: $('#Crew').val(),
+                                    FieldCode: $('#FieldCode').val(),
+                                    Totalvines: $('#Totalvines').val(),
+                                    Totalunits: $('#Totalunits').val(),
+                                    costOverride: $('#costOverride').val(),
+                                    QC_Average: $('#QC_Average').val(),
+                                    Total_Hours: $('#Total_Hours').val(),
+                                    TimeDiff: $('#TimeDiff').val(),
+                                    TimeDiff2nd: $('#TimeDiff2nd').val(),
+                                    TimeDiff3rd: $('#TimeDiff3rd').val(),
+                                    QC_Hours: $('#QC_Hours').val(),
+                                    description: jobcodesByJobcode[$('#JobCode').val()]
                                 }
+
 
                                 var rowIndx = 0;
 
@@ -408,7 +448,7 @@
                 selectionModel: { type: null },
 
                 filterModel: { on: true, header: false, type: 'remote' },
-                sortModel: { type: 'remote', sorter: [{ dataIndx: 'Date', dir: 'up' }, { dataIndx: 'RECIEPTNO', dir: 'up' }] },
+                sortModel: { type: 'remote', sorter: [{ dataIndx: 'Date', dir: 'up' }] },
                 beforeSort: function (evt) {
                     if (evt.originalEvent) {//only if sorting done through header cell click.
                         this.options.pqIS.init();
@@ -584,22 +624,47 @@
                                                 text: "Ok",
                                                 class:"ui-button ui-corner-all ui-widget",
                                                 click: function() {
-                                                   
+    
                                                     var newRowData = {
-                                                        crew_info: crewByOid[$('#crew').val()],
-                                                        FieldCode: $('#field').val(),
-                                                        Date: $('#crewData').val(),
-                                                        QC_Average: $('#qcAverage').val(),
-                                                        Totalvines: $('#totalVines').val(),
-                                                        TimeDiff2nd: $('#assistantHours').val(),
-                                                        TimeDiff: $('#leaderHours').val(),
-                                                        QC_Hours: $('#qcHours').val(),
-                                                        description: jobcodesByJobcode[$('#jobcodes').val()],
+                                                        Date: $('#Date').val(),
+                                                        JobCode: $('#JobCode').val(),
+                                                        Crew: $('#Crew').val(),
+                                                        crew_info: crewByOid[$('#Crew').val()],
+                                                        FieldCode: $('#FieldCode').val(),
+                                                        Totalvines: $('#Totalvines').val(),
+                                                        Totalunits: $('#Totalunits').val(),
+                                                        costOverride: $('#costOverride').val(),
+                                                        QC_Average: $('#QC_Average').val(),
+                                                        Total_Hours: $('#Total_Hours').val(),
+                                                        TimeDiff: $('#TimeDiff').val(),
+                                                        TimeDiff2nd: $('#TimeDiff2nd').val(),
+                                                        TimeDiff3rd: $('#TimeDiff3rd').val(),
+                                                        QC_Hours: $('#QC_Hours').val(),
+                                                        description: jobcodesByJobcode[$('#JobCode').val()]
                                                     }
-                                                    ui.rowData.Crew = $('#crew').val();
-                                                    ui.rowData.JobCode = $('#jobcodes').val();
                                                     
-                                                    _self.updateRow({rowIndx: ui.rowIndx, newRow: newRowData, checkEditable: false});
+
+                                                    newRowData = calculateRow(newRowData);
+
+                                                    var updateData = {};
+                                                    for(var col in _self.colModel){
+                                                        var modelCol = _self.colModel[col].dataIndx;
+                                                        if(ui.rowData.hasOwnProperty(modelCol)){
+                                                            updateData[modelCol] = ui.rowData[modelCol];
+                                                        }
+                                                         var modelCol = _self.colModel[col].dataIndx;
+                                                        if(newRowData.hasOwnProperty(modelCol)){
+                                                            updateData[modelCol] = newRowData[modelCol];
+                                                        }
+                                                    }
+                                                    
+                                                    
+                                                    console.log(JSON.parse(JSON.stringify(updateData)));
+
+                                                    ui.rowData.Crew = $('#Crew').val(),
+                                                    ui.rowData.JobCode = $('#JobCode').val();
+                                                    
+                                                    _self.updateRow({rowIndx: ui.rowIndx, newRow: updateData, checkEditable: false});
 
                                                     _self.showLoading();
                                                     _self.options.pqIS.data[ui.rowIndx+1] = calculateRow(_self.options.pqIS.data[ui.rowIndx+1]);
@@ -635,27 +700,6 @@
                             }
                         }
                     },
-
-                    { title: "Contractor Name", width: 120, dataIndx: "contractor_name", dataType: "string", editable: false },
-
-                    { title: "Crew Code", width: 120, dataIndx: "Crew", dataType: "string", editable: false },
-
-                    { title: "Crew", dataIndx: "crew_info", width: 150, dataType: "string", editable: false },
-
-                    { title:'Field Vines per Acre', width: 135, dataIndx: "vines_per_acre", dataType: "float", editable: false },
-
-                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", editable: false },
-
-                    { title: "Total Acres", width: 100, dataIndx: "field_acres1", dataType: "float", editable: false },
-
-                    { title: "Variety Name", width: 100, dataIndx: "Variety_name", dataType: "string", editable: false },
-
-                    { title: "Field Total Vines", width: 115, dataIndx: "vine_count", dataType: "integer", editable: false },
-
-                    { title: "Operation", width: 115, dataIndx: "JobCode", dataType: "integer", editable: false },
-
-                    { title: "Operation Name", width: 150, dataIndx: "description", dateType: "string", editable: false },
-                        
                     { title: "Crew Date", width: 100, dataIndx: "Date", dataType: "string", editable: false,
                         render: function(ui){
                             var curDate = new Date();
@@ -666,7 +710,24 @@
                             return {};
                         }
                     },
+                    { title: "Recipt No", width: 120, dataIndx: "RECIEPTNO", dataType: "string", editable: false },
+                    { title: "Operation Name", width: 150, dataIndx: "description", dateType: "string", editable: false },
 
+                    { title: "Contractor Name", width: 120, dataIndx: "contractor_name", dataType: "string", editable: false },
+
+                    { title: "Crew", dataIndx: "CrewName", width: 150, dataType: "string", editable: false },
+
+                    { title:'Field Vines per Acre', width: 135, dataIndx: "vines_per_acre", dataType: "float", editable: false },
+
+                    { title: "Field", width: 100, dataIndx: "FieldCode", dataType: "string", editable: false },
+
+                    { title: "Total Acres", width: 100, dataIndx: "field_acres1", dataType: "float", editable: false },
+
+                    { title: "Total Units", width: 115, dataIndx: "Totalunits", dataType: "integer", editable: false },
+
+                    { title: "Field Total Vines", width: 115, dataIndx: "vine_count", dataType: "integer", editable: false },
+
+                        
                     { title: "Cost / Acre Actual", width: 150, dataIndx: "acresPerHour", dataType: "float", editable: false },
 
                     { title: "Man Hr / Acre Actual", width: 150, dataIndx: "employeeAcresPerHr", dataType: "float", editable: false },
@@ -677,15 +738,24 @@
 
                     { title: "Acres", width: 100, dataIndx: "vineacres", dateType: "float", editable: false },
 
-                    { title: "Leader Hours", width: 100, dataIndx: "TimeDiff", dateType: "string", editable: false }, 
-
-                    {title: 'Assistant Hours', width: 110, dataIndx: "TimeDiff2nd", dataType: "string", editable: false },
-                    
-                    { title: "Inspector Hours", width: 120, dataIndx: "QC_Hours", dateType: "float", editable: false },
-                        
-                    {title: 'Employee Hours', width:115, dataIndx: "employeeHours", dateType: "integer", editable: false },
-
-                    { title: "Total Cost", width: 100, dataIndx: "total", dateType: "float", editable: false },
+                    { title: "Leader Hours", width: 100, dataIndx: "leader_hrs", dateType: "string", editable: false }, 
+                    {title: 'Assistant Hours', width: 110, dataIndx: "assistant_hrs", dataType: "string", editable: false },
+                    { title: "Inspector Hours", width: 120, dataIndx: "inspector_hours", dateType: "float", editable: false},
+                    { title: 'Employee Hours', width:115, dataIndx: "employee_hrs", dateType: "integer", editable: false },
+                    { title: "Total Cost", width: 100, dataIndx: "total", dateType: "float", editable: false ,
+                        render: function(ui){
+                             if(toNumber(ui.rowData.costOverride) > 0){
+                                return { cls: 'override_cost' };
+                            }
+                            return {};
+                        }},
+                    { dataIndx: "Total_Hours",  hidden:true },
+                    { dataIndx: "TimeDiff",  hidden:true },
+                    { dataIndx: "QC_Average",  hidden:true },
+                    { dataIndx: "TimeDiff2nd",  hidden:true },
+                    { dataIndx: "TimeDiff3rd",  hidden:true },
+                    { dataIndx: "Crew",  hidden:true },
+                    { dataIndx: "costOverride",  hidden:true },
 
                     // { title: "temp", width: 100, dataIndx: "ROW_INDEX", dataType: "string", editable: true },
                 ],
@@ -709,6 +779,9 @@
 
     td.futer_date_error {
         background: #ff2f2f3b;
+    }
+    td.override_cost {
+        background: #ed25df47;
     }
 
     tr.duplicet_record_worning {

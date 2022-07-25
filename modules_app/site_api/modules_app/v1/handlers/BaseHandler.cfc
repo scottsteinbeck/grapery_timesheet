@@ -5,17 +5,20 @@ component extends="coldbox.system.RestHandler" {
 			"FieldCode", "JobCode",
 			"QC_Average", "Totalvines", "QC_Hours",
 			"TotalCalculatedTime",
+			"Totalunits",
 			"ROW_INDEX",
 			"RECIEPTNO",
+			"costOverride",
+			"Date",
+			"Total_Hours",
 			"TimeDiff", "TimeDiff2nd", "TimeDiff3rd"
         ]
 		if(specifyTable){
 			for(i=1; i <= len(colItems); i++){
-				colItems[i] = "TIME_ENTRY_FORM_V3." & colItems[i];
+				colItems[i] = "Time_Entry_Form_v4." & colItems[i];
 			}
 		}
 
-        colItems.append("FORMAT (TIME_ENTRY_FORM_V3.Date, 'yyyy-MM-dd') AS Date");
         return colItems;
     }
 

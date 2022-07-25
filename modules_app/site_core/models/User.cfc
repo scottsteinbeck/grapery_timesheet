@@ -44,7 +44,6 @@ component extends="quick.models.BaseEntity" table="users" accessors="true" {
 		"first_name"   : { "type": "string" },
 		"last_name"    : { "type": "string" },
 		"email"        : { "type": "string" },
-		"can_login"    : { "type": "boolean" },
 		"business_name": { "type": "string" },
 		"address"      : { "type": "string" },
 		"address_2"    : { "type": "string" },
