@@ -45,8 +45,8 @@
     function editAddBtnHtml(rowDt) {
 
         var addHtml = `<div class="form-group">
-                            <label for="reciept">Reciept Number</label>
-                            <input class="form-control" type="text" id="reciept"></input>
+                            <label for="RECIEPTNO">Reciept Number</label>
+                            <input class="form-control" type="text" id="RECIEPTNO"></input>
                         </div>
                         <br>
                         `
@@ -210,7 +210,7 @@
 
         //Pull in joined Crew Data
         var getCrew = crew.filter(function(x){ return x.CrewNumber == rowData.Crew; });
-        if(getField.length){
+        if(getField.length && getCrew.length){
             rowData.CrewLead = getCrew[0].CrewLead;
             rowData.CrewName = getCrew[0].CrewName;
             rowData.contractor_name = getCrew[0].contractor_name;
@@ -369,6 +369,7 @@
                             click: function() {
                             
                                 var newRowData = {
+                                    RECIEPTNO: $('#RECIEPTNO').val(),
                                     Date: $('#Date').val(),
                                     JobCode: $('#JobCode').val(),
                                     Crew: $('#Crew').val(),
@@ -382,7 +383,8 @@
                                     TimeDiff2nd: $('#TimeDiff2nd').val(),
                                     TimeDiff3rd: $('#TimeDiff3rd').val(),
                                     QC_Hours: $('#QC_Hours').val(),
-                                    description: jobcodesByJobcode[$('#JobCode').val()]
+                                    description: jobcodesByJobcode[$('#JobCode').val()],
+                                    jobdescription: jobcodesByJobcode[$('#JobCode').val()]
                                 }
 
 
@@ -394,10 +396,10 @@
                                     method: "POST",
                                     data: {newRowData: JSON.stringify(newRowData)},
                                     success: function(data){
-                                        newRowData.ROW_INDEX = data.GENERATEDKEY;
-                                        newRowData.contractor_name = data.EXTRAROWDATA.contractor_name;
-                                        newRowData.field_acres1 = data.EXTRAROWDATA.field_acres1;
-                                        newRowData.vine_count = data.EXTRAROWDATA.vine_count;
+                                        newRowData.ROW_INDEX = data.generatedKey;
+                                        newRowData.contractor_name = data.extraRowData.contractor_name;
+                                        newRowData.field_acres1 = data.extraRowData.field_acres1;
+                                        newRowData.vine_count = data.extraRowData.vine_count;
 
                                         _grid.addRow({newRow: calculateRow(newRowData), rowIndx: rowIndx, checkEditable: false});
                                         _grid.refreshRow({rowIndx: rowIndx});
@@ -519,7 +521,7 @@
                     var _self = this;
 
                     if( duplicates[ui.rowData.RECIEPTNO] ){
-                        return { cls: "duplicet_record_worning" }
+                        return { cls: "duplicate_record_worning" }
                     }
                 },
 
@@ -640,7 +642,8 @@
                                                         TimeDiff2nd: $('#TimeDiff2nd').val(),
                                                         TimeDiff3rd: $('#TimeDiff3rd').val(),
                                                         QC_Hours: $('#QC_Hours').val(),
-                                                        description: jobcodesByJobcode[$('#JobCode').val()]
+                                                        description: jobcodesByJobcode[$('#JobCode').val()],
+                                                        jobdescription: jobcodesByJobcode[$('#JobCode').val()]
                                                     }
                                                     
 
@@ -784,7 +787,7 @@
         background: #ed25df47;
     }
 
-    tr.duplicet_record_worning {
+    tr.duplicate_record_worning {
         background: #fff5ba;
     }
 </style>

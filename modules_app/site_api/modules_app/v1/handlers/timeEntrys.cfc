@@ -17,19 +17,20 @@ component extends="BaseHandler"{
 		// 	abort;
 		// }
 
-		var employee_hrs ="coalesce(cast(Total_Hours as numeric),0)";
-		var leader_hrs ="coalesce(cast(TimeDiff as numeric) / 60,0)";
-		var assistant_hrs ="COALESCE(((cast(TimeDiff2nd as numeric) + cast(TimeDiff3rd as numeric))/60),0)";
-		var inspector_hours ="COALESCE(cast(QC_Hours as numeric),0)";
+		var employee_hrs ="coalesce(TRY_CAST(Total_Hours as numeric),0)";
+		var leader_hrs ="coalesce(TRY_CAST(TimeDiff as numeric) / 60,0)";
+		var assistant_hrs ="COALESCE(((TRY_CAST(TimeDiff2nd as numeric) + TRY_CAST(TimeDiff3rd as numeric))/60),0)";
+		var inspector_hours ="COALESCE(TRY_CAST(QC_Hours as numeric),0)";
 		var total_hours = "#employee_hrs# + #leader_hrs# + #assistant_hrs# + #inspector_hours#";
+		var field_acres  ="COALESCE(TRY_CAST(field_acres1 as numeric),1)";
 		selectItems = [
             "BlockID", "Crew", "FieldCode", "Time_Entry_Form_v4.JobCode", "QC_Average", "Totalvines", 
 			
-			"coalesce(cast(Total_Hours as numeric),0) as Total_Hours", 
-			"coalesce(cast(QC_Hours as numeric),0) as QC_Hours", 
-			"coalesce(cast(TimeDiff as numeric),0) as TimeDiff", 
-			"coalesce(cast(TimeDiff2nd as numeric),0) as TimeDiff2nd", 
-			"coalesce(cast(TimeDiff3rd as numeric),0) as TimeDiff3rd",
+			"coalesce(TRY_CAST(Total_Hours as numeric),0) as Total_Hours", 
+			"coalesce(TRY_CAST(QC_Hours as numeric),0) as QC_Hours", 
+			"coalesce(TRY_CAST(TimeDiff as numeric),0) as TimeDiff", 
+			"coalesce(TRY_CAST(TimeDiff2nd as numeric),0) as TimeDiff2nd", 
+			"coalesce(TRY_CAST(TimeDiff3rd as numeric),0) as TimeDiff3rd",
 			"#employee_hrs# as employee_hrs",
 			"#leader_hrs# as leader_hrs",
 			"#assistant_hrs# as assistant_hrs",
@@ -54,16 +55,16 @@ component extends="BaseHandler"{
 
 			"field_acres1",
 
-			"round((CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT)),2) AS vines_per_acre",
+			"round((TRY_CAST (vine_count AS FLOAT)/#field_acres#),2) AS vines_per_acre",
 			
-			"( #leader_hrs# * pLeader ) + ( #assistant_hrs# * pAssistant)  + ( #inspector_hours# * pQC)  + ( #employee_hrs# * pFieldWorker) + (CASE WHEN Time_Entry_Form_v4.jobcode = 4940 THEN (CAST (Totalunits AS FLOAT) * 0.6832 ) ELSE 0 END)  AS total",
-			"ROUND((Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))),2) AS vineacres",
+			"( #leader_hrs# * pLeader ) + ( #assistant_hrs# * pAssistant)  + ( #inspector_hours# * pQC)  + ( #employee_hrs# * pFieldWorker) + (CASE WHEN Time_Entry_Form_v4.jobcode = 4940 THEN (TRY_CAST (Totalunits AS FLOAT) * 0.6832 ) ELSE 0 END)  AS total",
+			"ROUND((Totalvines/(TRY_CAST (vine_count AS FLOAT)/#field_acres#)),2) AS vineacres",
 
 			// employeeHours / vineacres = employeeAcresPerHr
-			"CASE WHEN Totalvines> 0 THEN ROUND((#total_hours#)/(Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))),2) ELSE 0 END AS employeeAcresPerHr",
+			"CASE WHEN Totalvines> 0 THEN ROUND((#total_hours#)/(Totalvines/(TRY_CAST (vine_count AS FLOAT)/#field_acres#)),2) ELSE 0 END AS employeeAcresPerHr",
 			
 			// total / vineacres = acresPerHour
-			"CASE WHEN Totalvines> 0 THEN ROUND((( #leader_hrs# * pLeader ) + ( #assistant_hrs# * pAssistant) + ( #inspector_hours# * pQC) + ( #employee_hrs# * pFieldWorker) )/(Totalvines/(CAST (vine_count AS FLOAT)/CAST (field_acres1 AS FLOAT))),2) ELSE 0 END AS acresPerHour",
+			"CASE WHEN Totalvines> 0 THEN ROUND((( #leader_hrs# * pLeader ) + ( #assistant_hrs# * pAssistant) + ( #inspector_hours# * pQC) + ( #employee_hrs# * pFieldWorker) )/(Totalvines/(TRY_CAST (vine_count AS FLOAT)/#field_acres#)),2) ELSE 0 END AS acresPerHour",
 
 			"PTCREW.CrewName"
 		];
@@ -116,7 +117,7 @@ component extends="BaseHandler"{
 				q.where(rc.filterCol, filterTp, rc.filterData);
 			})
 			.whereNull('deleteDate')
-			.andWhere('Time_Entry_Form_v4.JobCode','=',{value:'4940', cfsqltype = "CF_SQL_INTEGER"})
+			.andWhereIn('Time_Entry_Form_v4.JobCode',['4940','4941'])
 			.andWhere('VerificationType','=',{value:'1', cfsqltype = "CF_SQL_INTEGER"})
 			// .toSQL();
 			.paginate(pq_curpage, rc.pq_rpp);
@@ -170,13 +171,13 @@ component extends="BaseHandler"{
 		// Code for adding ---------------------------------------
 		else {
 
-			// dump(rc); abort;
-
-			var colNamesToQry = [];
+			
+			var colNamesToQry = ['VerificationType'];
 			var newRowData = deserializeJSON(rc.newRowData);
 			var newRowsToQry = {};
-
-			var index = 0;
+			newRowsToQry['VerificationType'] = { value = 1 };
+			
+			var index = 1;
 			for(data in newRowData){
 				if(getQueryColNames(false).find(data) && !isNull(newRowData[data]) && newRowData[data] != "" && newRowData[data] != "0"){
 					index++;
@@ -184,7 +185,7 @@ component extends="BaseHandler"{
 					colNamesToQry[index] = data;
 				}
 			}
-
+			
 			if(arrayLen(colNamesToQry) > 0){
 				queryExecute("
 					INSERT INTO Time_Entry_Form_v4 (" & arrayToList(colNamesToQry, ',') & ")
@@ -207,7 +208,7 @@ component extends="BaseHandler"{
 
 			// dump(contractorName); abort;
 
-			return {generatedKey: newRecord.generatedKey,extraRowData: extraRowData[1]};
+			return {"generatedKey": newRecord.generatedKey,"extraRowData": extraRowData[1] ?: {}};
 		}
     }
 

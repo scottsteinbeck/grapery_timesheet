@@ -73,7 +73,7 @@ component extends="coldbox.system.EventHandler" {
 		prc.duplicateRecords = queryExecute("
 			SELECT Crew, FieldCode, JobCode, RECIEPTNO, Date, COUNT(*) AS numberOfDuplicates
 			FROM Time_Entry_Form_v4
-			WHERE deleteDate IS NULL
+			WHERE deleteDate IS NULL and VerificationType = 1
 			GROUP BY Crew, FieldCode, JobCode, RECIEPTNO, Date
 			HAVING COUNT(*) > 2
 		",{ },{ returnType: "array" });
