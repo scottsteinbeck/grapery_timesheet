@@ -1,0 +1,23 @@
+[Unit]
+Description=Grapeery Timesheet Service
+
+[Service]
+ExecStart=/usr/local/bin/box server start /home/timeadmin/grapery_timesheet/server.json
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+[Unit]
+Description='Crontask Manager'
+
+[Service]
+Type=simple
+ExecStart='box task run task_manager'
+Restart=on-failure
+RestartSec=2000ms
+
+[Install]
+WantedBy=multi-user.target
