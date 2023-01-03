@@ -489,7 +489,7 @@
                 dataModel: {
                     dataType: "JSON",
                     location: "remote",
-                    url: "/api/v1/preharvestTimeEntrys",
+                    url: "/api/v1/timeEntrys",
                     postData: function () {
                         return {
                             pq_curpage: this.options.pqIS.requestPage,
@@ -544,7 +544,7 @@
 
                                     _self.showLoading();
                                     $.ajax({
-                                        url: "/api/v1/preharvestTimeEntrys",
+                                        url: "/api/v1/timeEntrys",
                                         method: "POST",
                                         data: { rowIdx: ui.rowData.ROW_INDEX,
                                             copyReciept: ui.rowData.RECIEPTNO.split("_")[0]
@@ -582,7 +582,7 @@
                                                     $( this ).dialog( "close" );
                                                     
                                                     _self.showLoading();
-                                                    deleteUrl = "/api/v1/preharvestTimeEntrys/" + ui.rowData.ROW_INDEX;
+                                                    deleteUrl = "/api/v1/timeEntrys/" + ui.rowData.ROW_INDEX;
                                                     $.ajax({
                                                         url: deleteUrl,
                                                         method: "DELETE",
@@ -677,7 +677,7 @@
                                                     rowData = _self.getRowData({ rowIndx: ui.rowIndx });
 
                                                     $.ajax({
-                                                        url: "/api/v1/preharvestTimeEntrys/" + rowData.ROW_INDEX,
+                                                        url: "/api/v1/timeEntrys/" + rowData.ROW_INDEX,
                                                         method: "PUT",
                                                         data: { newRowData: JSON.stringify(rowData), 
                                                             oldRowData: oldRowData }

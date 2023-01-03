@@ -110,7 +110,10 @@
 				<cfif auth().isLoggedIn()>
 					<ul class="navbar-nav">
 						<li class="nav-item">
-							<a class="nav-link <cfif rc.event == 'main.index'>active</cfif>" href="##">Data</a>
+							<a class="nav-link <cfif rc.event == 'main.index'>active</cfif>" href="##">Preharvest Data</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link <cfif rc.event == 'main.harvestdata'>active</cfif>" href="/main/harvestdata">Harvest Data</a>
 						</li>
 						<li class="nav-item">
 							<a class="nav-link <cfif rc.event == 'main.changeLog'>active</cfif>" href="/main/changeLog">Change log</a>

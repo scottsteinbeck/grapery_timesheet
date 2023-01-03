@@ -11,7 +11,10 @@ component extends="BaseHandler"{
         prc.changeLogData = queryExecute("
 			SELECT *
 			FROM change_log
-            WHERE clDate <= :showToDate
+            WHERE clDate <= :showToDate 
+            and clChanges is not null 
+            and clChanges != ''
+            and clChanges != '[]'
         ",
 		{
 			showToDate = { value = dateAdd('d', -30, now()), cfsqltype = "cf_sql_date"}

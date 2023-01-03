@@ -117,7 +117,8 @@ component extends="BaseHandler"{
 				q.where(rc.filterCol, filterTp, rc.filterData);
 			})
 			.whereNull('deleteDate')
-			.andWhereIn('Time_Entry_Form_v4.JobCode',['4940','4941'])
+			.andWhereNotIn('Time_Entry_Form_v4.JobCode',['4940','4941'])
+			.andWhere('Time_Entry_Form_v4.Date','>=',{value:'2022-12-05', cfsqltype = "CF_SQL_Date"})
 			.andWhere('VerificationType','=',{value:'1', cfsqltype = "CF_SQL_VARCHAR"})
 			// .toSQL();
 			.paginate(pq_curpage, rc.pq_rpp);

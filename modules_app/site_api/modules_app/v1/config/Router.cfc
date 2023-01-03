@@ -2,6 +2,7 @@ component {
 
 	function configure() {
 		resources( resource = "timeEntrys", parameterName = "id-numeric" );
+		resources( resource = "preharvestTimeEntrys", parameterName = "id-numeric" );
 
 		resources( resource = "changeLog", parameterName = "id-numeric" );
 

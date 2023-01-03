@@ -46,6 +46,7 @@ component extends="coldbox.system.EventHandler" {
 			SELECT JOBCODES.description, JOBCODES.jobcode
 			FROM ArcGIS.gidata.JOBCODES
 			WHERE JOBCODES.GDB_TO_DATE = '9999-12-31 23:59:59.000'
+			order by JOBCODES.jobcode
 		",{},{ returnType = 'array'});
 
 		prc.polyfield = queryExecute("
@@ -73,7 +74,55 @@ component extends="coldbox.system.EventHandler" {
 		prc.duplicateRecords = queryExecute("
 			SELECT Crew, FieldCode, JobCode, RECIEPTNO, Date, COUNT(*) AS numberOfDuplicates
 			FROM Time_Entry_Form_v4
-			WHERE deleteDate IS NULL and VerificationType = 1
+			WHERE deleteDate IS NULL and VerificationType = '1'
+			GROUP BY Crew, FieldCode, JobCode, RECIEPTNO, Date
+			HAVING COUNT(*) > 2
+		",{ },{ returnType: "array" });
+
+		prc.payrates = queryExecute("
+			SELECT *
+			FROM payrates
+		",{},{ returnType: "struct", columnKey: "pSeason"});
+	}
+
+
+	function harvestdata( event, rc, prc ) {
+		// prc.welcomeMessage = "Welcome to ColdBox!";
+		event.setView( "main/harvestdata" );
+
+		prc.jobcodes = queryExecute("
+			SELECT JOBCODES.description, JOBCODES.jobcode
+			FROM ArcGIS.gidata.JOBCODES
+			WHERE JOBCODES.GDB_TO_DATE = '9999-12-31 23:59:59.000'
+			order by JOBCODES.jobcode
+		",{},{ returnType = 'array'});
+
+		prc.polyfield = queryExecute("
+			SELECT
+			POLYFIELD.vine_count,
+			POLYFIELD.field_acres1,
+			POLYFIELD.Variety_name,
+			POLYFIELD.field_name
+			FROM ArcGIS.gidata.POLYFIELD
+			WHERE POLYFIELD.GDB_TO_DATE = '9999-12-31 23:59:59.000'
+		",{},{ returnType = 'array'});
+
+		prc.crew = queryExecute("
+			SELECT
+			PTCREW.CrewName,
+			PTCREW.CrewLead,
+			PTCREW.CrewNumber,
+			CONTRACTOR.contractor_name
+			FROM ArcGIS.gidata.PTCREW
+			LEFT JOIN ArcGIS.gidata.CONTRACTOR ON CONTRACTOR.GlobalID = PTCREW.ContractorID AND CONTRACTOR.GDB_TO_DATE = '9999-12-31 23:59:59.000'
+			WHERE PTCREW.GDB_TO_DATE = '9999-12-31 23:59:59.000'
+			ORDER BY CrewLead
+		",{},{ returnType = 'array'});
+
+		prc.duplicateRecords = queryExecute("
+			SELECT Crew, FieldCode, JobCode, RECIEPTNO, Date, COUNT(*) AS numberOfDuplicates
+			FROM Time_Entry_Form_v4
+			WHERE deleteDate IS NULL and VerificationType = '1'
 			GROUP BY Crew, FieldCode, JobCode, RECIEPTNO, Date
 			HAVING COUNT(*) > 2
 		",{ },{ returnType: "array" });
